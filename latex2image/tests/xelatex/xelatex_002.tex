@@ -1,0 +1,124 @@
+\documentclass{article}
+\usepackage[paperheight=50cm, paperwidth=25cm, top=0.5cm,bottom=0.5cm,left=1cm,right=5cm,twoside=false, marginparwidth=4.6cm, marginparsep=3mm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{rotating}
+\usepackage{threeparttable}
+\usepackage{setspace}
+\usepackage{colortbl}
+\usepackage{diagbox}
+\usepackage{soul}
+\usepackage{float}
+\usepackage{newfloat}
+\DeclareFloatingEnvironment[
+fileext=dab,
+placement=tbhp,
+]{keytable}
+\DeclareFloatingEnvironment[
+fileext=daf,
+placement=tbhp,
+]{keyfigure}
+\DeclareFloatingEnvironment[
+fileext=dab,
+placement=tbhp,
+]{casetable}
+\DeclareFloatingEnvironment[
+fileext=daf,
+placement=tbhp,
+]{casefigure}
+\def\defaultfont{\renewcommand{\baselinestretch}{1}
+\fontsize{9.8pt}{\baselineskip}\selectfont}
+\renewcommand{\baselinestretch}{1.2}
+\doublerulesep=0.4pt
+\setlength\jot{3pt}
+\newcommand{\chuhao}{\fontsize{44pt}{\baselineskip}\selectfont}
+\newcommand{\xiaochu}{\fontsize{28pt}{\baselineskip}\selectfont}
+\newcommand{\yihao}{\fontsize{26pt}{\baselineskip}\selectfont}
+\newcommand{\erhao}{\fontsize{22pt}{\baselineskip}\selectfont}
+\newcommand{\xiaoer}{\fontsize{18pt}{\baselineskip}\selectfont}
+\newcommand{\sanhao}{\fontsize{16pt}{\baselineskip}\selectfont}
+\newcommand{\xiaosan}{\fontsize{15pt}{\baselineskip}\selectfont}
+\newcommand{\sihao}{\fontsize{14pt}{\baselineskip}\selectfont}
+\newcommand{\banxiaosi}{\fontsize{13pt}{\baselineskip}\selectfont}
+\newcommand{\xiaosi}{\fontsize{12pt}{\baselineskip}\selectfont}
+\newcommand{\dawuhao}{\fontsize{11.5pt}{\baselineskip}\selectfont}
+\newcommand{\wuhao}{\fontsize{10.5pt}{\baselineskip}\selectfont}
+\newcommand{\xiaowu}{\fontsize{9.5pt}{\baselineskip}\selectfont}
+\newcommand{\liuhao}{\fontsize{8pt}{\baselineskip}\selectfont}
+\newcommand{\xiaoliu}{\fontsize{7pt}{\baselineskip}\selectfont}
+\newcommand{\banbanxiaosi}{\fontsize{12pt}{\baselineskip}\selectfont}
+\renewcommand\keytablename{Key Table}
+\renewcommand{\thekeytable}{\arabic{keytable}}
+\renewcommand\keyfigurename{Key Figure}
+\renewcommand{\thekeyfigure}{\arabic{keyfigure}}
+\newcommand{\jie}{\textbf{Solution: }}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcommand{\dlab}[2]{\mathop{\mbox{$#1$}}\limits_{#2}}
+\newcommand{\topcaption}{
+\setlength{\abovecaptionskip}{0pt}
+\setlength{\belowcaptionskip}{-1pt}
+\caption}
+\newcommand{\botcaption}{
+\setlength{\abovecaptionskip}{-1.5pt}
+\setlength{\belowcaptionskip}{0pt}
+\caption}
+\newcommand{\bbotcaption}[1]{
+\setlength{\abovecaptionskip}{{#1}}
+\setlength{\belowcaptionskip}{0pt}
+\caption}
+\usepackage[linewidth=1pt,linecolor=black,backgroundcolor=black!4,xcolor=cmyk
+] {mdframed}
+\usepackage{todonotes}
+\usepackage{marginnote}
+\makeatletter
+\newcommand{\todos}[2][]
+{\renewcommand{\@todonotes@drawMarginNoteWithLine}{%
+\begin{tikzpicture}[remember picture, overlay, baseline=-0.75ex]%
+\node [coordinate] (inText) {};%
+\end{tikzpicture}%
+\marginnote[{%
+\@todonotes@drawMarginNote%
+\@todonotes@drawLineToLeftMargin%
+}]{%
+\@todonotes@drawMarginNote%
+\@todonotes@drawLineToRightMargin%
+}}\todo[color=black!4, linecolor=black, size=\wuhao, #1]{\textbf #2}}
+\newcommand{\todosv}[3][]
+{\gdef\@vsp{#3}\renewcommand{\@todonotes@drawMarginNoteWithLine}{%
+\begin{tikzpicture}[remember picture, overlay, baseline=-0.75ex]%
+\node [coordinate] (inText) {};%
+\end{tikzpicture}%
+\marginnote[{%
+\@todonotes@drawMarginNote%
+\@todonotes@drawLineToLeftMargin%
+}]{%
+\@todonotes@drawMarginNote%
+\@todonotes@drawLineToRightMargin%
+}[\@vsp]}\todo[color=black!4, linecolor=black, size=\wuhao, #1]{\textbf #2}}
+\makeatother
+\makeatletter
+\newcommand\figcaption{\def\@captype{figure}\caption}
+\newcommand\figbotcaption{\def\@captype{figure}\botcaption}
+\newcommand\keyfigcaption{\def\@captype{keyfigure}\botcaption}
+\newcommand\tabcaption{\def\@captype{table}\caption}
+\newcommand\tabtopcaption{\def\@captype{table}\topcaption}
+\newcommand\keytabcaption{\def\@captype{keytable}\topcaption}
+\makeatother
+\newenvironment{mytabular}{\bgroup\xiaowu\tabular}{\endtabular\egroup}
+\newenvironment{mytabularliu}{\bgroup\liuhao\tabular}{\endtabular\egroup}
+\newenvironment{mytabularliux}{\bgroup\xiaoliu\tabular}{\endtabular\egroup}
+\newenvironment{mytabularx}{\bgroup\xiaowu\tabularx}{\endtabularx\egroup}
+
+\pagestyle{empty}
+\begin{document}
+
+
+\begin{table}[H]\centering
+\begin{tabular}{c|c|c|c|c|c} \hline\hline \multirow{2}*{DMU} & \multicolumn{2}{c|}{Input} & \multicolumn{3}{c}{Output} \\ \cline{2-6} &Doctors&Beds&Service day(ThousandDays/Year)&TrainedStudents&TrainedNurse\\ \hline Hosptial 1&266&935&51&260&40\\Hosptial 2&160&640&35&153&27\\Hosptial 3&275&1050&36&250&20\\Hosptial 4&229&971&33&160&50\\ \hline\hline \end{tabular}
+\end{table}
+
+\end{document}

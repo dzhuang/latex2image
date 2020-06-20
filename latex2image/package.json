@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "bootstrap": "^3.4.1",
+    "codemirror": "^5.54.0",
+    "font-awesome": "^4.7.0",
+    "jquery": "^3.5.0",
+    "jquery-ui-dist": "^1.12.1"
+  }
+}

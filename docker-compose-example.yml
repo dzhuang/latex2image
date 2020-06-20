@@ -1,0 +1,23 @@
+version: '2'
+services:
+   latex2image:
+     image: dzhuang/latex2image
+     ports:
+       - "8020:8020"
+       - "27017:27017"
+#     volumes:
+#       - path/to/your/local/dir:latex2image/local_settings
+     environment:
+       - L2I_ALLOWED_HOST1=www.example.org
+       - L2I_ALLOWED_HOST2=www2.example.org
+       - L2I_MONGODB_HOST=docker.example.org
+       - L2I_MONGODB_USERNAME=me
+       - L2I_MONGODB_PASSWORD=pass
+       - L2I_CORS_ORIGIN_WHITELIST_0=http://www.abcd.com
+       - L2I_CORS_ORIGIN_WHITELIST_0=http://www.cdef.com
+       - L2I_LANGUAGE_CODE=zh-hans
+       - L2I_TZ=Hongkong
+       - L2I_DEBUG=on
+       - DJANGO_SUPERUSER_USERNAME=me
+       - DJANGO_SUPERUSER_PASSWORD=passwd
+#       - DJANGO_SUPERUSER_EMAIL=myemail@example.com

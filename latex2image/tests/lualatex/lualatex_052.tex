@@ -1,0 +1,107 @@
+\RequirePackage{luatex85}
+\documentclass{standalone}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{graphs,graphs.standard, graphdrawing, quotes,shapes,arrows.meta,arrows}
+\usegdlibrary{layered}
+
+\pagestyle{empty}
+\begin{document}
+
+
+\tikzset{act/.style={draw, circle split, inner sep=5pt, minimum size=1.5cm}}
+
+\tikzset{critical_act/.style={draw, circle split, double, fill=blue!20, inner sep=5pt, minimum size=1.5cm}}
+
+\def\dur{\nodepart{lower}}
+
+\begin{tikzpicture}[layered layout, >=stealth', font=\large, every label/.style={label distance=-0.15cm, font=\large}]
+\node(A)[act,
+label={135:$0$},
+label={45:$4$},
+label={225:$6$},
+label={315:$10$},
+]{A \dur $4$};
+\node(B)[critical_act,
+label={135:$0$},
+label={45:$10$},
+label={225:$0$},
+label={315:$10$},
+]{B \dur $10$};
+\node(C)[act,
+label={135:$0$},
+label={45:$9$},
+label={225:$2$},
+label={315:$11$},
+]{C \dur $9$};
+\node(D)[critical_act,
+label={135:$10$},
+label={45:$14$},
+label={225:$10$},
+label={315:$14$},
+]{D \dur $4$};
+\node(E)[act,
+label={135:$10$},
+label={45:$27$},
+label={225:$11$},
+label={315:$28$},
+]{E \dur $17$};
+\node(F)[critical_act,
+label={135:$14$},
+label={45:$28$},
+label={225:$14$},
+label={315:$28$},
+]{F \dur $14$};
+\node(G)[act,
+label={135:$28$},
+label={45:$30$},
+label={225:$32$},
+label={315:$34$},
+]{G \dur $2$};
+\node(H)[critical_act,
+label={135:$28$},
+label={45:$34$},
+label={225:$28$},
+label={315:$34$},
+]{H \dur $6$};
+\node(I)[critical_act,
+label={135:$34$},
+label={45:$42$},
+label={225:$34$},
+label={315:$42$},
+]{I \dur $8$};
+\node(S0)[act,
+label={135:$0$},
+label={45:$0$},
+label={225:$0$},
+label={315:$0$},
+]{Start \dur $0$};
+
+\graph [
+use existing nodes,
+grow'=right,
+layered layout,
+level distance=3cm,
+sibling sep=.5em,
+sibling distance=3cm
+]
+{
+(A) -> (D);
+(B) ->[draw=blue, very thick] (D);
+(B) -> (E);
+(C) -> (E);
+(D) ->[draw=blue, very thick] (F);
+(A) -> (G);
+(F) -> (G);
+(E) -> (H);
+(F) ->[draw=blue, very thick] (H);
+(G) -> (I);
+(H) ->[draw=blue, very thick] (I);
+(S0) -> (A);
+(S0) -> (B);
+(S0) -> (C);
+};
+
+\end{tikzpicture}
+
+\end{document}

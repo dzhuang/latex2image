@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% load crispy_forms_tags %}
+
+{% block title %}
+  {{ form_description }} - LaTeX2Image
+{% endblock %}
+
+{% block head_assets_form_media %}
+  {{ form.media }}
+{% endblock %}
+
+
+{% block content %}
+    {% block form_description %}
+        {% if form_description %}
+            <h1>{{ form_description }}</h1>
+            {{ form_text|safe }}
+        {% endif %}
+    {% endblock %}
+    {% block form %}
+        <div class="well">
+            {% crispy form %}
+        </div>
+    {% endblock %}
+{% endblock %}
+

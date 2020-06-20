@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+{% load i18n %}
+{% load static %}
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% block favicon %}{% endblock %}
+
+    <title>{% block title %}Django LaTex2Image{% endblock %}</title>
+
+    {% block head_assets %}
+      {% block head_assets_before_form_media %}
+        <link href="{% static 'bootstrap/dist/css/bootstrap.min.css' %}" rel="stylesheet">
+        <link href="{% static 'jquery-ui-dist/jquery-ui.theme.min.css' %}" rel="stylesheet">
+
+        <link rel="stylesheet" href="{% static 'font-awesome/css/font-awesome.min.css' %}">
+
+        <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+        <script src="{% static 'jquery-ui-dist/jquery-ui.min.js' %}"></script>
+        <script src="{% static 'bootstrap/dist/js/bootstrap.min.js' %}"></script>
+
+      {% endblock %}
+
+      {% block head_assets_form_media %}
+        {{ form.media }}
+      {% endblock %}
+
+      {% block header_extra %}{% endblock %}
+
+      {% block head_assets_after_form_media %}
+      {% endblock %}
+
+      {% block head_assets_extra %}{% endblock %}
+    {% endblock %}
+
+  </head>
+
+  <body>
+    {% block lte_ie9_warning %}
+      <!--[if lte IE 9]>
+        <div class="browser alert alert-danger warning"><i class="fa fa-warning"></i>
+          {% trans "This website may not be compatible with your outdated Internet Explorer version. If you want use Internet Explorer, please install one with version 10 or higher." %}
+        </div>
+      <![endif]-->
+    {% endblock %}
+    {% block fixed_navbar %}
+      <!-- Fixed navbar -->
+      <div class="navbar navbar-default" role="navigation">
+        <div class="container" id="content-wrapper">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+              <a class="navbar-brand" href="{% block brand_link %}{% url 'home' %}{% endblock %}">
+                  {%block brand %}<img src="{% static 'assets/brand.svg' %}">{% endblock %}
+              </a>
+          </div>
+          <div class="navbar-collapse collapse">
+            {% if not maintenance_mode %}
+              <ul class="nav navbar-nav">
+
+                {% block navbar %}{% endblock %}
+
+                {% block navbar_dropdown_staff %}
+                  {% if user.is_staff %}
+                    <li class="dropdown">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown">{% trans "Staff" %}<b class="caret"></b></a>
+                      <ul class="dropdown-menu">
+                        {% block navbar_dropdown_staff_menu_admin %}
+                          {% if user.is_staff %}
+                            <li><a href="{% url 'admin:index' %}" target="_blank">{% trans "Admin site" %}</a></li>
+                          {% endif %}
+                        {% endblock %}
+                      </ul>
+                    </li>
+                  {% endif %}
+              {% endblock %}
+              </ul>
+              <ul class="nav navbar-nav navbar-right">
+                {% block preview_status %}
+                {% endblock %}
+
+                {% if user.is_authenticated %}
+                  <li>
+                    <a href="{% url 'profile' %}">
+                      {% blocktrans trimmed with username=user.username %}
+                        Signed in as {{ username }}
+                      {% endblocktrans %} </a>
+                  </li>
+                {% else %}
+                    <li><a href="{% url 'login' %}">{% trans "Sign in" %}</a></li>
+                {% endif %}
+              </ul>
+            {% endif %}{# not maintenance_mode #}
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    {% endblock %}
+
+    {% block pre_root_container %}{% endblock %}
+
+    {% block root_container %}
+      <div class="container">
+        {% block content %}
+        {% endblock %}
+      </div>
+    {% endblock %}
+
+    {% block footer %}{% endblock %}
+
+    {% block page_bottom_javascript_extra %}{% endblock %}
+
+    {% block page_bottom_javascript %}
+      <!-- JavaScript
+      ================================================== -->
+      <!-- Placed at the end of the document so the pages load faster -->
+      <script>
+          function get_cookie(name) {
+              var cookieValue = null;
+              if (document.cookie && document.cookie != '') {
+                  var cookies = document.cookie.split(';');
+                  for (var i = 0; i < cookies.length; i++) {
+                      var cookie = jQuery.trim(cookies[i]);
+                      // Does this cookie string begin with the name we want?
+                      if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                          break;
+                      }
+                  }
+              }
+              return cookieValue;
+          }
+      </script>
+    {% endblock %}
+  </body>
+</html>

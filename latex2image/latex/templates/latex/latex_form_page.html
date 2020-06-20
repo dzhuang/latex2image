@@ -1,0 +1,26 @@
+{% extends "generic_form_page.html" %}
+{% load i18n %}
+{% load static %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+    {{ block.super }}
+
+    {% if tex_source %}
+        <hr>
+        <div class="alert alert-info no-mathjax">{{ tex_source | safe }}</div>
+    {% endif %}
+
+    {% if data_url %}
+        <hr>
+        <div class="alert alert-success no-mathjax"><img src="{{ data_url }}"/></div>
+    {% endif %}
+
+    {% if error %}
+        <hr>
+        <div class="alert alert-danger no-mathjax"><p>{{ error | safe }}</p></div>
+    {% endif %}
+
+{% endblock %}
+

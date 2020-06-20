@@ -1,0 +1,6 @@
+**/.git
+**/*.pyc
+**/*.tar.gz
+**/local_settings.py
+**/node_modules
+**/.gitignore

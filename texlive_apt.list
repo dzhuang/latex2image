@@ -1,0 +1,14 @@
+texlive-latex-base
+texlive-latex-extra
+texlive-xetex
+texlive-luatex
+texlive-plain-generic
+texlive-fonts-recommended
+texlive-humanities
+texlive-binaries
+texlive-extra-utils
+texlive-pictures
+latexmk
+dvipng
+pdf2svg
+fontconfig
