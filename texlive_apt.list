@@ -1,4 +1,6 @@
 texlive-latex-base
+texlive-lang-chinese
+texlive-lang-cjk
 texlive-latex-extra
 texlive-xetex
 texlive-luatex
@@ -8,7 +10,13 @@ texlive-humanities
 texlive-binaries
 texlive-extra-utils
 texlive-pictures
+latex-cjk-common
+latex-cjk-chinese
+latex-cjk-chinese-arphic-gbsn00lp
+latex-cjk-chinese-arphic-gkai00mp
+xfonts-wqy
+ttf-wqy-zenhei
+ttf-wqy-microhei
 latexmk
 dvipng
 pdf2svg
-fontconfig

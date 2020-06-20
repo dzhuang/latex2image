@@ -1,5 +1,10 @@
-\documentclass{article}
+\documentclass[UTF8]{ctexart}
 \usepackage[paperheight=50cm, paperwidth=25cm, top=0.5cm,bottom=0.5cm,left=1cm,right=5cm,twoside=false, marginparwidth=4.6cm, marginparsep=3mm]{geometry}
+\usepackage{xeCJK}
+\setCJKmainfont[Mapping=none, ItalicFont=Source Han Serif CN, ItalicFeatures=FakeSlant, AutoFakeSlant]{Source Han Serif CN}
+\setCJKsansfont[Mapping=none, ItalicFont=Source San Serif CN Bold, ItalicFeatures=FakeSlant, AutoFakeSlant]{Source Han Sans CN}
+\newCJKfontfamily\hei{Source Han Sans CN}
+\newCJKfontfamily\kai{FZKai-Z03S}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{longtable}
@@ -51,11 +56,11 @@ placement=tbhp,
 \newcommand{\liuhao}{\fontsize{8pt}{\baselineskip}\selectfont}
 \newcommand{\xiaoliu}{\fontsize{7pt}{\baselineskip}\selectfont}
 \newcommand{\banbanxiaosi}{\fontsize{12pt}{\baselineskip}\selectfont}
-\renewcommand\keytablename{Key Table}
+\renewcommand\keytablename{答案表}
 \renewcommand{\thekeytable}{\arabic{keytable}}
-\renewcommand\keyfigurename{Key Figure}
+\renewcommand\keyfigurename{答案图}
 \renewcommand{\thekeyfigure}{\arabic{keyfigure}}
-\newcommand{\jie}{\textbf{Solution: }}
+\newcommand{\jie}{\hei 解：}
 \newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
 \newcommand{\dlab}[2]{\mathop{\mbox{$#1$}}\limits_{#2}}
 \newcommand{\topcaption}{
@@ -86,7 +91,7 @@ placement=tbhp,
 }]{%
 \@todonotes@drawMarginNote%
 \@todonotes@drawLineToRightMargin%
-}}\todo[color=black!4, linecolor=black, size=\wuhao, #1]{\textbf #2}}
+}}\todo[color=black!4, linecolor=black, size=\wuhao, #1]{\hei #2}}
 \newcommand{\todosv}[3][]
 {\gdef\@vsp{#3}\renewcommand{\@todonotes@drawMarginNoteWithLine}{%
 \begin{tikzpicture}[remember picture, overlay, baseline=-0.75ex]%
@@ -98,7 +103,7 @@ placement=tbhp,
 }]{%
 \@todonotes@drawMarginNote%
 \@todonotes@drawLineToRightMargin%
-}[\@vsp]}\todo[color=black!4, linecolor=black, size=\wuhao, #1]{\textbf #2}}
+}[\@vsp]}\todo[color=black!4, linecolor=black, size=\wuhao, #1]{\hei #2}}
 \makeatother
 \makeatletter
 \newcommand\figcaption{\def\@captype{figure}\caption}
@@ -116,9 +121,18 @@ placement=tbhp,
 \pagestyle{empty}
 \begin{document}
 
+\jie 
 
 \begin{table}[H]\centering
-\begin{tabular}{c|c|c|c|c|c} \hline\hline \multirow{2}*{DMU} & \multicolumn{2}{c|}{Input} & \multicolumn{3}{c}{Output} \\ \cline{2-6} &Doctors&Beds&Service day(ThousandDays/Year)&TrainedStudents&TrainedNurse\\ \hline Hosptial 1&266&935&51&260&40\\Hosptial 2&160&640&35&153&27\\Hosptial 3&275&1050&36&250&20\\Hosptial 4&229&971&33&160&50\\ \hline\hline \end{tabular}
+\begin{tabular}{c|c|c|c|c|c} \hline\hline \multirow{2}*{DMU} & \multicolumn{2}{c|}{投入} & \multicolumn{3}{c}{产出} \\ \cline{2-6} &医生人数&病床数&病人服务天数(千天/年)&培训实习生数&培训护士数\\ \hline 医院1&266&935&51&260&40\\医院2&160&640&35&153&27\\医院3&275&1050&36&250&20\\医院4&229&971&33&160&50\\ \hline\hline \end{tabular}
 \end{table}
+
+答案
+
+\textbf{答案}
+
+\textit{答案}
+
+\kai{答案}
 
 \end{document}
