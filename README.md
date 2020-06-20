@@ -58,6 +58,7 @@ The following short-handed settings items can be configured in your `docker-comp
 | L2I_DEBUG                  | For settings.DEBUG. Allowed values [`off`, `on`], default to `off`. | 
 | L2I_API_CACHE_FIELD | A field name which is supposed to be cached since the 1st request when using create and detail api with a `field` querystring. Either `image` (the url of the image) or `latex_url`. Notice that compile error will always be cached. If changed in production server, a flush of cache will be needed.|
 | L2I_CACHE_MAX_BYTES | The maximum size above which the attribute won't be cached. |
+| L2I_KEY_VERSION | A string appended to the auto generated `tex_key`, which is used as the identifier of the Tex source code. Default to 1. |
 | DJANGO_SUPERUSER_USERNAME | Superuser name created for the first run. String, no quote. |
 | DJANGO_SUPERUSER_PASSWORD | Superuser password created for the first run. String, no quote. |
 

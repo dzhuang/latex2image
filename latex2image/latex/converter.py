@@ -409,10 +409,10 @@ def get_data_url(file_path):
 
 # {{{ Base tex2img class
 
-VERSION = 1
+def build_key(tex_source, cmd, image_format):
+    from django.conf import settings
+    version = getattr(settings, "L2I_KEY_VERSION", 1)
 
-
-def build_key(tex_source, cmd, image_format, version=VERSION):
     return "%s_%s_%s_v%s" % (
         md5(tex_source.encode("utf-8")).hexdigest(),
         cmd, image_format, version)
