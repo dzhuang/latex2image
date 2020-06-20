@@ -31,4 +31,4 @@ deploy:
     script: bash docker_push
     skip_cleanup: true
     on:
-      branch: zh-cn
+      branch: ZhHans
