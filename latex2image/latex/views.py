@@ -386,7 +386,7 @@ class LatexImageList(
 
 
 class LatexImageCreate(
-        CreateMixin, FieldsSerializerMixin, generics.CreateAPIView):
+        CreateMixin, generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = LatexImageSerializer
 
