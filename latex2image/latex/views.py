@@ -39,7 +39,7 @@ def get_cached_attribute_by_tex_key(tex_key, attr, request=None):
         cache_key = tex_key
         error_key = "%s_error" % cache_key
     except ImproperlyConfigured:
-        return {}
+        return None
 
     assert cache_key is not None
 
@@ -403,6 +403,14 @@ class LatexImageDetail(
             return LatexImage.objects.filter(creator=self.request.user)
         return LatexImage.objects.all()
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        if instance.compile_error:
+            return Response(serializer.data, status=400)
+        else:
+            return Response(serializer.data)
+
     def get(self, request, *args, **kwargs):
         tex_key = kwargs.get("tex_key")
         assert tex_key is not None
@@ -413,7 +421,8 @@ class LatexImageDetail(
                 cached_result = (
                     get_cached_results_from_request_field_and_tex_key(
                         request, tex_key, fields[0]))
-                return JsonResponse(
-                    cached_result,
-                    status=400 if "compile_error" in cached_result else 200)
-        return super(LatexImageDetail, self).get(request, *args, **kwargs)
+                if cached_result is not None:
+                    return JsonResponse(
+                        cached_result,
+                        status=400 if "compile_error" in cached_result else 200)
+        return self.retrieve(request, *args, **kwargs)

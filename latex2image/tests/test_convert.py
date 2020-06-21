@@ -1,8 +1,11 @@
 import os
-from unittest import TestCase
+from unittest import TestCase, mock
 
-from latex.converter import tex_to_img_converter, CommandBase, Latexmk, Pdf2svg
-from latex.utils import file_read
+from latex.converter import (
+    tex_to_img_converter, get_tex2img_class, ImageConvertError, LatexCompileError,
+    UnknownCompileError
+)
+from latex.utils import file_read, get_abstract_latex_log
 from tests.base_test_mixins import get_latex_file_dir
 
 
@@ -67,7 +70,7 @@ class TexToImgConverterTest(TestCase):
             for filename in os.listdir(latex_doc_path):
                 file_path = os.path.join(latex_doc_path, filename)
                 with self.subTest(
-                        ilename=filename, test_name="latex", image_format=image_format):
+                        filename=filename, test_name="latex", image_format=image_format):
                     tex_source = get_file_content(file_path).decode("utf-8")
                     data_url = tex_to_img_converter(
                         "latex", tex_source, image_format,
@@ -81,7 +84,7 @@ class TexToImgConverterTest(TestCase):
             for filename in os.listdir(latex_doc_path):
                 file_path = os.path.join(latex_doc_path, filename)
                 with self.subTest(
-                        ilename=filename, test_name="latex", image_format=image_format):
+                        filename=filename, test_name="latex", image_format=image_format):
                     tex_source = get_file_content(file_path).decode("utf-8")
                     data_url = tex_to_img_converter(
                         "latex", tex_source, image_format,
@@ -89,38 +92,126 @@ class TexToImgConverterTest(TestCase):
                     self.assertIsNotNone(data_url)
                     self.assertTrue(data_url.startswith("data:image/%s" % image_format))
 
+    def test_more_than_one_pages_error(self):
+        latex_doc_path = get_latex_file_dir("pdflatex_multilple_pages")
+        for filename in os.listdir(latex_doc_path):
+            file_path = os.path.join(latex_doc_path, filename)
+            image_format = "png"
+            with self.subTest(
+                    filename=filename, test_name="pdflatex", image_format=image_format):
+                tex_source = get_file_content(file_path).decode("utf-8")
+                with self.assertRaises(ImageConvertError):
+                    tex_to_img_converter(
+                        "pdflatex", tex_source, image_format,
+                    ).get_converted_data_url()
 
-class VersionCheckTest(TestCase):
-    def test_check_version_error(self):
-        class FakeCommand1(CommandBase):
-            name = "noneexist"
-            cmd = "nonexist"
+    def test_compile_error_no_log(self):
+        doc_path = get_latex_file_dir("xelatex")
+        filename = os.listdir(doc_path)[0]
+        file_path = os.path.join(doc_path, filename)
+        tex_source = get_file_content(file_path).decode("utf-8")
 
-        fake_command = FakeCommand1()
-        errors = fake_command.check()
-        self.assertEqual(len(errors), 1)
+        expected_error = "some error"
+        with mock.patch("latex.converter.Tex2ImgBase.compile_popen"
+                        ) as mock_compile_subprocess:
+            mock_compile_subprocess.return_value = ["foo", expected_error, 1]
+            with self.assertRaises(LatexCompileError) as cm:
+                tex_to_img_converter(
+                    "xelatex", tex_source, "png"
+                ).get_converted_data_url()
+            self.assertIn(expected_error, str(cm.exception))
 
-    def test_min_version_error(self):
-        class FakeLatexmk1(Latexmk):
-            min_version = "100.39"
+    def test_compile_no_error_but_no_compiled_pdf_file(self):
+        doc_path = get_latex_file_dir("xelatex")
+        filename = os.listdir(doc_path)[0]
+        file_path = os.path.join(doc_path, filename)
+        tex_source = get_file_content(file_path).decode("utf-8")
 
-        fake_command = FakeLatexmk1()
-        errors = fake_command.check()
-        self.assertEqual(len(errors), 1)
+        with mock.patch("latex.converter.Tex2ImgBase.compile_popen"
+                        ) as mock_compile_subprocess:
+            mock_compile_subprocess.return_value = ["foo", "", 0]
+            with self.assertRaises(UnknownCompileError) as cm:
+                tex_to_img_converter(
+                    "xelatex", tex_source, "png"
+                ).get_converted_data_url()
+            self.assertIn("No pdf file was generated.", str(cm.exception))
 
-    def test_max_version_error(self):
-        class FakeLatexmk2(Latexmk):
-            max_version = "1.39"
+    def test_convert_error(self):
+        doc_path = get_latex_file_dir("xelatex")
+        filename = os.listdir(doc_path)[0]
+        file_path = os.path.join(doc_path, filename)
+        tex_source = get_file_content(file_path).decode("utf-8")
 
-        fake_command = FakeLatexmk2()
-        errors = fake_command.check()
-        self.assertEqual(len(errors), 1)
+        expected_error = "some error"
+        with mock.patch("latex.converter.ImageConverter.convert_popen"
+                        ) as mock_compile_subprocess:
+            mock_compile_subprocess.return_value = ["bar", expected_error, 1]
+            with self.assertRaises(ImageConvertError) as cm:
+                tex_to_img_converter(
+                    "xelatex", tex_source, "svg"
+                ).get_converted_data_url()
+            self.assertIn(expected_error, str(cm.exception))
 
-    def test_pdf2svg_with_version_check_error(self):
-        # pdf2svg has no version.
-        class FakePdf2svg(Pdf2svg):
-            skip_version_check = False
+    def test_get_data_url_error(self):
+        doc_path = get_latex_file_dir("xelatex")
+        filename = os.listdir(doc_path)[0]
+        file_path = os.path.join(doc_path, filename)
+        tex_source = get_file_content(file_path).decode("utf-8")
 
-        fake_command = FakePdf2svg()
-        errors = fake_command.check()
-        self.assertEqual(len(errors), 1)
+        expected_error = "some error"
+        with mock.patch("latex.converter.get_data_url") as mock_get_data_url:
+            mock_get_data_url.side_effect = RuntimeError(expected_error)
+            with self.assertRaises(ImageConvertError) as cm:
+                tex_to_img_converter(
+                    "xelatex", tex_source, "svg"
+                ).get_converted_data_url()
+            self.assertIn(expected_error, str(cm.exception))
+
+    def test_imagemagick_convert_error(self):
+        doc_path = get_latex_file_dir("xelatex")
+        filename = os.listdir(doc_path)[0]
+        file_path = os.path.join(doc_path, filename)
+        tex_source = get_file_content(file_path).decode("utf-8")
+
+        expected_error = "some ImageMagick error"
+        with mock.patch("latex.converter.wand_image.convert") as mock_im_convert:
+            mock_im_convert.side_effect = RuntimeError(expected_error)
+            with self.assertRaises(ImageConvertError) as cm:
+                tex_to_img_converter(
+                    "xelatex", tex_source, "png"
+                ).get_converted_data_url()
+            self.assertIn(expected_error, str(cm.exception))
+
+    def test_do_convert_success_but_no_images(self):
+        doc_path = get_latex_file_dir("xelatex")
+        filename = os.listdir(doc_path)[0]
+        file_path = os.path.join(doc_path, filename)
+        tex_source = get_file_content(file_path).decode("utf-8")
+
+        with mock.patch("latex.converter.get_number_of_images") as mock_get_n_images:
+            mock_get_n_images.return_value = 0
+            with self.assertRaises(ImageConvertError) as cm:
+                tex_to_img_converter(
+                    "xelatex", tex_source, "png"
+                ).get_converted_data_url()
+            self.assertIn("No image was generated", str(cm.exception))
+
+
+class GetTex2imgClassTest(TestCase):
+    # test latex.converter.get_tex2img_class
+    def test_compiler_not_allowed(self):
+        with self.assertRaises(ValueError):
+            get_tex2img_class("pdftex", "png")
+
+    def test_not_allowed_compiler_format_combination(self):
+        with mock.patch(
+                "latex.converter.ALLOWED_LATEX2IMG_FORMAT", ['png', 'svg', 'jpg']):
+            with self.assertRaises(ValueError):
+                get_tex2img_class("pdflatex", "jpg")
+
+
+class GetAbstractLatexLogTest(TestCase):
+    # test latex.utils.get_abstract_latex_log
+    def test_return_str(self):
+        # no LATEX_LOG_OMIT_LINE_STARTS and LATEX_ERR_LOG_BEGIN_LINE_STARTS
+        self.assertEqual(get_abstract_latex_log("abcd"), "abcd")

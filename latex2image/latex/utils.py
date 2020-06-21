@@ -100,17 +100,14 @@ def file_read(filename):
     # type: (Text) -> bytes
     '''Read the content of a file and close it properly.'''
     with open(filename, 'rb') as f:
-        ff = File(f)
-        content = ff.read()
-    return content
+        return f.read()
 
 
 def file_write(filename, content):
     # type: (Text, bytes) -> None
     '''Write into a file and close it properly.'''
     with open(filename, 'wb') as f:
-        ff = File(f)
-        ff.write(content)
+        f.write(content)
 
 # }}}
 
@@ -129,16 +126,18 @@ LATEX_LOG_OMIT_LINE_STARTS = (
 
 def get_abstract_latex_log(log):
     # type: (Text) -> Text
-    '''abstract error msg from latex compilation log'''
-    msg = log.split(LATEX_ERR_LOG_BEGIN_LINE_STARTS)[1]\
-        .split(LATEX_ERR_LOG_END_LINE_STARTS)[0]
+    """abstract error msg from latex compilation log"""
+    try:
+        msg = log.split(LATEX_ERR_LOG_BEGIN_LINE_STARTS)[1]\
+            .split(LATEX_ERR_LOG_END_LINE_STARTS)[0]
+    except IndexError:
+        return log
 
-    if LATEX_LOG_OMIT_LINE_STARTS:
-        msg = "\n".join(
-            line for line in msg.splitlines()
-            if (not line.startswith(LATEX_LOG_OMIT_LINE_STARTS)
-                and
-                line.strip() != ""))
+    msg = "\n".join(
+        line for line in msg.splitlines()
+        if (not line.startswith(LATEX_LOG_OMIT_LINE_STARTS)
+            and
+            line.strip() != ""))
     return msg
 
 # }}}
@@ -155,29 +154,6 @@ def get_all_indirect_subclasses(cls):
         all_subcls.extend(get_all_indirect_subclasses(subcls))
 
     return list(set(all_subcls))
-
-
-def replace_latex_space_seperator(s):
-    # type: (Text) -> Text
-    """
-    "{{", "}}", "{%", %}", "{#" and "#}" are used in jinja
-    template, so we have to put spaces between those
-    characters in latex source in the latex macro.
-    To compile the source, we are now removing the spaces.
-    """
-    pattern_list = [
-        r'{ {',
-        r'} }',
-        r'{ #',
-        r'# }',
-        r'{ %',
-        r'% }'
-        ]
-    for pattern in pattern_list:
-        while pattern in s:
-            s = s.replace(pattern, pattern.replace(" ", ""))
-
-    return s
 
 
 class CriticalCheckMessage(Critical):

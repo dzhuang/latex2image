@@ -152,6 +152,11 @@ client = {}
 # If not set, no cache will be used.
 L2I_API_CACHE_FIELD = "image"
 
+# We are using ImageMagick to convert PDFs to PNG, resolution is density in ImageMagick
+# density=96 and quality=85 is google image resolution for images.
+
+# L2I_IMAGEMAGICK_PNG_RESOLUTION = 96
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',

@@ -24,16 +24,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from latex.utils import get_all_indirect_subclasses
-from django.core.checks import register, Critical
-from django.core.exceptions import ImproperlyConfigured
-
-
-class L2ICriticalCheckMessage(Critical):
-    def __init__(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        super(L2ICriticalCheckMessage, self).__init__(*args, **kwargs)
-        self.obj = self.obj or ImproperlyConfigured.__name__
+from latex.utils import get_all_indirect_subclasses, CriticalCheckMessage
+from django.core.checks import register
 
 
 def bin_check(app_configs, **kwargs):
@@ -48,31 +40,41 @@ def bin_check(app_configs, **kwargs):
     instance_list = [cls() for cls in klass]
     errors = []
     for instance in instance_list:
-        check_errors = instance.check()
-        if check_errors:
-            errors.extend(check_errors)
+        errors.extend(instance.check())
     return errors
 
 
 def settings_check(app_configs, **kwargs):
     errors = []
     from django.conf import settings
-    l2i_api_cache_field = getattr(
+    api_cache_field = getattr(
         settings, "L2I_API_CACHE_FIELD", None)
-    if l2i_api_cache_field is not None:
-        if not isinstance(l2i_api_cache_field, str):
+    if api_cache_field is not None:
+        if not isinstance(api_cache_field, str):
             errors.append(
-                L2ICriticalCheckMessage(
+                CriticalCheckMessage(
                     msg="if set, settings.L2I_API_CACHE_FIELD "
                         "must be a string",
-                    id="cache_mode_e001"))
+                    id="cache_field.E001"))
             return errors
-        if l2i_api_cache_field not in ["image", "data_url"]:
+        if api_cache_field not in ["image", "data_url"]:
             errors.append(
-                L2ICriticalCheckMessage(
+                CriticalCheckMessage(
                     msg="if set, settings.L2I_API_CACHE_FIELD "
                         "must be either 'image' or 'data_url'",
-                    id="cache_mode_e002"))
+                    id="cache_field.E002"))
+
+    imagemagick_png_resolution = (
+        getattr(settings, "L2I_IMAGEMAGICK_PNG_RESOLUTION", None))
+    if imagemagick_png_resolution is not None:
+        try:
+            assert int(imagemagick_png_resolution) > 0
+        except Exception:
+            errors.append(
+                CriticalCheckMessage(
+                    msg="if set, settings.L2I_IMAGEMAGICK_PNG_RESOLUTION "
+                        "must be a positive int",
+                    id="imagemagick_png_resolution.E001"))
     return errors
 
 

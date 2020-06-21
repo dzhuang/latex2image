@@ -1,5 +1,7 @@
 from __future__ import division
 
+from unittest.case import TestCase
+
 __copyright__ = "Copyright (C) 2020 Dong Zhuang"
 
 __license__ = """
@@ -22,14 +24,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import os
-from datetime import datetime
-
-from django.core.exceptions import ImproperlyConfigured
+from latex.converter import CommandBase, Latexmk, Pdf2svg
 from django.test import SimpleTestCase
 from django.test.utils import override_settings
-from django.utils.translation import ugettext_lazy as _
-from django.conf import settings
 
 from unittest import mock
 
@@ -77,7 +74,8 @@ class CheckL2ISettingsBase(SimpleTestCase):
 
         try:
             result_ids, result_msgs = (
-                list(zip(*[(r.id, r.msg) for r in result
+                list(zip(
+                    *[(r.id, r.msg) for r in result
                       if is_id_in_filter(r.id, filter_message_id_prefixes)])))
 
             if expected_ids is not None:
@@ -104,8 +102,158 @@ class CheckL2ISettingsBase(SimpleTestCase):
                 raise
 
 
-class CheckL2I(CheckL2ISettingsBase):
+class CheckBin(CheckL2ISettingsBase):
     msg_id_prefix = ""
+
+    @property
+    def func(self):
+        from latex.checks import bin_check
+        return bin_check
 
     def test_checks(self):
         self.assertCheckMessages([])
+
+
+class CheckCacheField(CheckL2ISettingsBase):
+    # test L2I_API_CACHE_FIELD
+    msg_id_prefix = "cache_field"
+
+    @property
+    def func(self):
+        from latex.checks import settings_check
+        return settings_check
+
+    @override_settings(L2I_API_CACHE_FIELD=None)
+    def test_checks_none(self):
+        self.assertCheckMessages([])
+
+    @override_settings(L2I_API_CACHE_FIELD=["image"])
+    def test_checks_list(self):
+        self.assertCheckMessages(['cache_field.E001'])
+
+    @override_settings(L2I_API_CACHE_FIELD="data_url")
+    def test_checks_ok(self):
+        self.assertCheckMessages([])
+
+    @override_settings(L2I_API_CACHE_FIELD="creator")
+    def test_checks_field_not_allowed(self):
+        self.assertCheckMessages(['cache_field.E002'])
+
+
+class CheckImageMagickPngResolution(CheckL2ISettingsBase):
+    # test L2I_IMAGEMAGICK_PNG_RESOLUTION
+    msg_id_prefix = "imagemagick_png_resolution"
+
+    @property
+    def func(self):
+        from latex.checks import settings_check
+        return settings_check
+
+    @override_settings(L2I_IMAGEMAGICK_PNG_RESOLUTION=None)
+    def test_checks_none(self):
+        self.assertCheckMessages([])
+
+    @override_settings(L2I_IMAGEMAGICK_PNG_RESOLUTION=[1])
+    def test_checks_list(self):
+        self.assertCheckMessages(['imagemagick_png_resolution.E001'])
+
+    @override_settings(L2I_IMAGEMAGICK_PNG_RESOLUTION="90")
+    def test_checks_int_str_ok(self):
+        self.assertCheckMessages([])
+
+    @override_settings(L2I_IMAGEMAGICK_PNG_RESOLUTION=90)
+    def test_checks_ok(self):
+        self.assertCheckMessages([])
+
+    @override_settings(L2I_IMAGEMAGICK_PNG_RESOLUTION="big")
+    def test_checks_not_int(self):
+        self.assertCheckMessages(['imagemagick_png_resolution.E001'])
+
+    @override_settings(L2I_IMAGEMAGICK_PNG_RESOLUTION="-1")
+    def test_checks_negative(self):
+        self.assertCheckMessages(['imagemagick_png_resolution.E001'])
+
+
+class VersionCheckTest(TestCase):
+    def test_check_version_error(self):
+        class FakeCommand1(CommandBase):
+            name = "noneexist"
+            cmd = "nonexist"
+
+        fake_command = FakeCommand1()
+        errors = fake_command.check()
+        self.assertEqual(len(errors), 1)
+
+
+class VersionCheckTestMocked(TestCase):
+    def setUp(self) -> None:
+        version_popen = mock.patch(
+            "latex.converter.CommandBase.version_popen")
+        self.mock_version_popen = version_popen.start()
+        self.mock_version_popen.start()
+        self.mock_version_popen.return_value = ("4.39", "some error", 0)
+        self.addCleanup(version_popen.stop)
+
+    def test_below_min_version(self):
+        class FakeLatexmk1(Latexmk):
+            min_version = "100.39"
+
+        fake_command = FakeLatexmk1()
+        errors = fake_command.check()
+        self.assertEqual(len(errors), 1)
+
+    def test_above_min_version(self):
+        class FakeLatexmk1(Latexmk):
+            min_version = "0.39"
+
+        fake_command = FakeLatexmk1()
+        errors = fake_command.check()
+        self.assertEqual(len(errors), 0)
+
+    def test_equal_min_version(self):
+        class FakeLatexmk1(Latexmk):
+            min_version = "4.39"
+
+        fake_command = FakeLatexmk1()
+        errors = fake_command.check()
+        self.assertEqual(len(errors), 0)
+
+    def test_min_version_error(self):
+        class FakeLatexmk1(Latexmk):
+            min_version = "100.39"
+
+        fake_command = FakeLatexmk1()
+        errors = fake_command.check()
+        self.assertEqual(len(errors), 1)
+
+    def test_max_version_error(self):
+        class FakeLatexmk2(Latexmk):
+            max_version = "1.39"
+
+        fake_command = FakeLatexmk2()
+        errors = fake_command.check()
+        self.assertEqual(len(errors), 1)
+
+    def test_max_version_equal(self):
+        class FakeLatexmk2(Latexmk):
+            max_version = "4.39"
+        fake_command = FakeLatexmk2()
+        errors = fake_command.check()
+        self.assertEqual(len(errors), 0)
+
+    def test_max_version_fit(self):
+        class FakeLatexmk2(Latexmk):
+            max_version = "4.40"
+        fake_command = FakeLatexmk2()
+        errors = fake_command.check()
+        self.assertEqual(len(errors), 0)
+
+    def test_pdf2svg_with_version_check_error(self):
+        class FakePdf2svg(Pdf2svg):
+            skip_version_check = False
+
+        self.mock_version_popen.return_value = "foobar", "error", 1
+
+        fake_command = FakePdf2svg()
+        errors = fake_command.check()
+        self.assertEqual(len(errors), 1)

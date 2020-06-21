@@ -28,15 +28,16 @@ from django.test import TestCase, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from unittest import mock
 from django.contrib.auth import get_user_model
-from django.conf import settings
+
 from rest_framework.authtoken.models import Token
 from rest_framework.test import (
     force_authenticate, APIRequestFactory, APIClient)
+from rest_framework.response import Response
 
 from tests import factories
 from tests.base_test_mixins import (
     L2ITestMixinBase, get_latex_file_dir, suppress_stdout_decorator,
-    get_fake_data_url
+    get_fake_data_url, improperly_configured_cache_patch
 )
 
 from latex.views import LatexImageList
@@ -650,7 +651,7 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
         filter_fields_str = "image"
 
         with mock.patch(
-                "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
+                "latex.views.LatexImageDetail.retrieve"
         ) as mock_api_get:
             resp = client.get(
                 self.get_detail_url(
@@ -678,7 +679,7 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
         filter_fields_str = "data_url"
 
         with mock.patch(
-                "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
+                "latex.views.LatexImageDetail.retrieve"
         ) as mock_api_get:
             resp = client.get(
                 self.get_detail_url(
@@ -706,7 +707,7 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
         filter_fields_str = "data_url"
 
         with mock.patch(
-                "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
+                "latex.views.LatexImageDetail.retrieve"
         ) as mock_api_get:
             resp = client.get(
                 self.get_detail_url(
@@ -730,7 +731,7 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
         filter_fields_str = "image"
 
         with mock.patch(
-                "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
+                "latex.views.LatexImageDetail.retrieve"
         ) as mock_api_get:
             resp = client.get(
                 self.get_detail_url(
@@ -754,7 +755,7 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
         filter_fields_str = "image"
 
         with mock.patch(
-                "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
+                "latex.views.LatexImageDetail.retrieve"
         ) as mock_api_get:
             resp = client.get(
                 self.get_detail_url(
@@ -781,7 +782,7 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
         filter_fields_str = "image"
 
         with mock.patch(
-                "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
+                "latex.views.LatexImageDetail.retrieve"
         ) as mock_api_get:
             resp = client.get(
                 self.get_detail_url(
@@ -817,7 +818,7 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
         filter_fields_str = "data_url"
 
         with mock.patch(
-                "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
+                "latex.views.LatexImageDetail.retrieve"
         ) as mock_api_get:
             resp = client.get(
                 self.get_detail_url(
@@ -887,3 +888,70 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
             sorted(filter_fields_str.split(",")),
             sorted(list(response_dict.keys())))
         self.assertEqual(self.test_cache.get(tex_key), str(_obj.image))
+
+    @improperly_configured_cache_patch()
+    def test_disable_cache(self, mock_cache):
+        from django.core.exceptions import ImproperlyConfigured
+        with self.assertRaises(ImproperlyConfigured):
+            from django.core.cache import cache  # noqa
+
+    @override_settings(L2I_API_CACHE_FIELD="data_url")
+    def test_no_cache_get(self):
+        instance = factories.LatexImageFactory()
+
+        client = APIClient()
+        client.force_authenticate(user=self.test_user)
+
+        filter_fields_str = "data_url"
+
+        with mock.patch(
+                "latex.views.LatexImageDetail.retrieve"
+        ) as mock_api_get, improperly_configured_cache_patch():
+            mock_api_get.return_value = Response()
+            resp = client.get(
+                self.get_detail_url(
+                    instance.tex_key, fields=filter_fields_str))
+            self.assertEqual(resp.status_code, 200)
+            mock_api_get.assert_called_once()
+
+    @override_settings(L2I_API_CACHE_FIELD="image")
+    def test_post_create_field_obj_exist_no_cache(self):
+        tex_key = "what_ever_key"
+        _obj = factories.LatexImageFactory(tex_key=tex_key)
+
+        client = APIClient()
+        client.force_authenticate(user=self.test_user)
+
+        filter_fields_str = "image"
+
+        with improperly_configured_cache_patch():
+            resp = client.post(
+                self.get_creat_url(),
+                data=self.get_post_data(tex_key=tex_key, fields=filter_fields_str),
+                format='json')
+            self.assertEqual(resp.status_code, 201)
+            self.assertEqual(LatexImage.objects.all().count(), 1)
+            response_dict = json.loads(resp.content.decode())
+            self.assertEqual(
+                sorted(filter_fields_str.split(",")),
+                sorted(list(response_dict.keys())))
+
+    @override_settings(L2I_API_CACHE_FIELD="image")
+    def test_get_result_with_obj_exist_compile_error_no_cache(self):
+        tex_key = "what_ever_key"
+        factories.LatexImageErrorFactory(
+            tex_key=tex_key, creator=self.test_user)
+
+        client = APIClient()
+        client.force_authenticate(user=self.test_user)
+
+        filter_fields_str = "image"
+
+        with improperly_configured_cache_patch():
+            resp = client.get(
+                self.get_detail_url(
+                    tex_key=tex_key, fields=filter_fields_str),
+                format='json')
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(LatexImage.objects.all().count(), 1)
