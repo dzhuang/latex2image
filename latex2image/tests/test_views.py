@@ -122,6 +122,21 @@ class GetDataUrlFromLatexForm(L2ITestMixinBase, TestCase):
         data.update(kwargs)
         return data
 
+    @staticmethod
+    def get_post_data2(file_dir="xelatex", **kwargs):
+        doc_path = get_latex_file_dir(file_dir)
+        file_path = os.path.join(
+            doc_path, os.listdir(doc_path)[0])
+
+        with open(file_path, encoding="utf-8") as f:
+            file_data = f.read()
+
+        data = {
+            "compiler_format": "xelatex2png",
+            "latex_code": file_data, "tex_key": ""}
+        data.update(kwargs)
+        return data
+
     def test_non_auth_get(self):
         with self.temporarily_switch_to_user(None):
             resp = self.get_latex_form_view()
@@ -148,15 +163,22 @@ class GetDataUrlFromLatexForm(L2ITestMixinBase, TestCase):
         del form_data["latex_file"]
         resp = self.post_latex_form_view(data=form_data)
         self.assertTrue(resp.status_code, 200)
-        self.assertFormError(
-            resp, form="form", field="latex_file",
-            errors=["This field is required."])
+        self.assertFormErrorLoose(
+            resp, errors="Either", form_name="form")
         self.assertResponseContextIsNone(resp, "data_url")
         self.assertResponseContextIsNone(resp, "error")
         self.assertEqual(LatexImage.objects.all().count(), 0)
 
     def test_post_success(self):
         resp = self.post_latex_form_view(data=self.get_post_data())
+
+        self.assertTrue(resp.status_code, 200)
+        self.assertResponseContextIsNotNone(resp, "data_url")
+        self.assertResponseContextIsNone(resp, "error")
+        self.assertEqual(LatexImage.objects.all().count(), 1)
+
+    def test_post_success_not_file(self):
+        resp = self.post_latex_form_view(data=self.get_post_data2())
 
         self.assertTrue(resp.status_code, 200)
         self.assertResponseContextIsNotNone(resp, "data_url")

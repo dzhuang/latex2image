@@ -1,26 +1,65 @@
-{% extends "generic_form_page.html" %}
+{% extends "base.html" %}
 {% load i18n %}
 {% load static %}
 
 {% load crispy_forms_tags %}
 
-{% block content %}
-    {{ block.super }}
-
-    {% if tex_source %}
-        <hr>
-        <div class="alert alert-info no-mathjax">{{ tex_source | safe }}</div>
-    {% endif %}
-
-    {% if data_url %}
-        <hr>
-        <div class="alert alert-success no-mathjax"><img src="{{ data_url }}"/></div>
-    {% endif %}
-
-    {% if error %}
-        <hr>
-        <div class="alert alert-danger no-mathjax"><p>{{ error | safe }}</p></div>
-    {% endif %}
-
+{% block title %}
+    {{ form_description }} - LaTeX2Image
 {% endblock %}
 
+{% block head_assets_form_media %}
+    {{ form.media }}
+{% endblock %}
+
+
+{% block content %}
+    <div class="container l2i-input">
+        <div class="row">
+            {% if form_description %}
+                <h1>{{ form_description }}</h1>
+                {{ form_text|safe }}
+            {% endif %}
+            <div class="well">
+                {% crispy form %}
+            </div>
+        </div>
+    </div>
+    <div class="container l2i-output">
+        <div class="row">
+            {% if error %}
+                <hr>
+                <div class="alert alert-danger no-mathjax">
+                    <h2>{% trans "Error" %}</h2>
+                    <p>
+                    <pre>{{ error | safe }}</pre>
+                    </p>
+                </div>
+            {% endif %}
+            {% if tex_source %}
+                <hr>
+                <div class="alert alert-info no-mathjax">
+                    <h2>{% trans "Source Code" %}</h2>
+                    <div>
+                        <pre>{{ tex_source | safe }}</pre>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if data_url %}
+                <hr>
+                <div class="alert alert-success no-mathjax">
+                    <h2>{% trans "Image" %}</h2>
+                    <hr>
+                    <div><img src="{{ data_url }}"/></div>
+                    <hr>
+                    <h2>{% trans "Data Url" %}</h2>
+                    <hr>
+                    <p style="overflow-wrap: break-word;!important;">{{ data_url }}</p>
+                    <hr>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+{% endblock %}
