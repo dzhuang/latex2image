@@ -47,10 +47,10 @@ class LatexImage(models.Model):
             self.image = make_image_file(self.data_url, self.tex_key)
 
         self.full_clean()
-        return super(LatexImage, self).save(**kwargs)
+        return super().save(**kwargs)
 
     def clean(self):
-        super(LatexImage, self).clean()
+        super().clean()
 
         # Either data_url or compile_error should be saved.
         if self.data_url is not None and self.compile_error is not None:

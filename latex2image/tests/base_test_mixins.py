@@ -128,7 +128,7 @@ class SuperuserCreateMixin(ResponseContextMixin):
         cls.settings_git_root_override = (
             override_settings(GIT_ROOT=tempfile.mkdtemp()))
         cls.settings_git_root_override.enable()
-        super(SuperuserCreateMixin, cls).setUpTestData()
+        super().setUpTestData()
 
     @classmethod
     def create_superuser(cls):
@@ -270,7 +270,7 @@ class L2ITestMixinBase(SuperuserCreateMixin):
 
     @classmethod
     def setUpTestData(cls):  # noqa
-        super(L2ITestMixinBase, cls).setUpTestData()
+        super().setUpTestData()
         cls.test_user = (
             get_user_model().objects.create_user(**cls._user_create_kwargs))
         cls.existing_user_count = get_user_model().objects.count()

@@ -163,7 +163,7 @@ def get_all_indirect_subclasses(cls):
 class CriticalCheckMessage(Critical):
     def __init__(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
-        super(CriticalCheckMessage, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.obj = self.obj or ImproperlyConfigured.__name__
 
 
