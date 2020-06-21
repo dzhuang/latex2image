@@ -573,10 +573,10 @@ class LatexCreateTest(L2ITestMixinBase, TestCase):
 
 class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
     @staticmethod
-    def get_post_data(**kwargs):
-        xelatex_doc_path = get_latex_file_dir("xelatex")
+    def get_post_data(file_dir="xelatex", **kwargs):
+        doc_path = get_latex_file_dir(file_dir)
         file_path = os.path.join(
-            xelatex_doc_path, os.listdir(xelatex_doc_path)[0])
+            doc_path, os.listdir(doc_path)[0])
 
         with open(file_path, encoding="utf-8") as f:
             file_data = f.read()
@@ -865,3 +865,25 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
             self.assertEqual(
                 response_dict["image"][len(expected_url_prefix):],
                 main_part)
+
+    @override_settings(L2I_API_CACHE_FIELD="image")
+    def test_post_create_field_in_cache(self):
+        tex_key = "what_ever_key"
+        _obj = factories.LatexImageFactory(tex_key=tex_key)
+
+        client = APIClient()
+        client.force_authenticate(user=self.test_user)
+
+        filter_fields_str = "image"
+
+        resp = client.post(
+            self.get_creat_url(),
+            data=self.get_post_data(tex_key=tex_key, fields=filter_fields_str),
+            format='json')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(LatexImage.objects.all().count(), 1)
+        response_dict = json.loads(resp.content.decode())
+        self.assertEqual(
+            sorted(filter_fields_str.split(",")),
+            sorted(list(response_dict.keys())))
+        self.assertEqual(self.test_cache.get(tex_key), str(_obj.image))
