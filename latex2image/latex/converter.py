@@ -206,7 +206,7 @@ class LatexCompiler(TexCompilerBase):
 
     def __init__(self):
         # type: () -> None
-        super(LatexCompiler, self).__init__()
+        super().__init__()
         self.latexmk_prog_repl = self._get_latexmk_prog_repl()
 
     def _get_latexmk_prog_repl(self):
@@ -255,7 +255,7 @@ class LuaLatex(LatexCompiler):
 
     def __init__(self):
         # type: () -> None
-        super(LuaLatex, self).__init__()
+        super().__init__()
         self.latexmk_prog_repl = "-%s=%s" % ("pdflatex", self.bin_path)
         if sys.platform.startswith("win"):  # pragma: no cover
             self.latexmk_prog_repl = "-%s=%s" % ("pdflatex", "lualatex-dev")
@@ -268,7 +268,7 @@ class XeLatex(LatexCompiler):
 
     def __init__(self):
         # type: () -> None
-        super(XeLatex, self).__init__()
+        super().__init__()
         self.latexmk_prog_repl = "-%s=%s" % ("pdflatex", self.bin_path)
 
 
@@ -371,7 +371,7 @@ class ImageMagick(ImageConverter):
                     bin_path_dir = os.path.dirname(p[0])
                     return os.path.join(bin_path_dir, self.cmd.lower())
         else:
-            return super(ImageMagick, self).get_bin_path()
+            return super().get_bin_path()
 
     def do_convert(self, compiled_file_path, image_path, working_dir):
         success = True

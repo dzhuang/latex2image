@@ -101,7 +101,7 @@ class UerProfileTest(L2ITestMixinBase, TestCase):
 
 class GetDataUrlFromLatexForm(L2ITestMixinBase, TestCase):
     def setUp(self):
-        super(GetDataUrlFromLatexForm, self).setUp()
+        super().setUp()
         self.c.force_login(self.test_user)
         assert LatexImage.objects.all().count() == 0
 
@@ -673,7 +673,7 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
         filter_fields_str = "image"
 
         with mock.patch(
-                "latex.views.LatexImageDetail.retrieve"
+                "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
             resp = client.get(
                 self.get_detail_url(
@@ -701,7 +701,7 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
         filter_fields_str = "data_url"
 
         with mock.patch(
-                "latex.views.LatexImageDetail.retrieve"
+                "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
             resp = client.get(
                 self.get_detail_url(
@@ -729,7 +729,7 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
         filter_fields_str = "data_url"
 
         with mock.patch(
-                "latex.views.LatexImageDetail.retrieve"
+                "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
             resp = client.get(
                 self.get_detail_url(
@@ -753,7 +753,7 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
         filter_fields_str = "image"
 
         with mock.patch(
-                "latex.views.LatexImageDetail.retrieve"
+                "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
             resp = client.get(
                 self.get_detail_url(
@@ -777,7 +777,7 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
         filter_fields_str = "image"
 
         with mock.patch(
-                "latex.views.LatexImageDetail.retrieve"
+                "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
             resp = client.get(
                 self.get_detail_url(
@@ -804,7 +804,7 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
         filter_fields_str = "image"
 
         with mock.patch(
-                "latex.views.LatexImageDetail.retrieve"
+                "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
             resp = client.get(
                 self.get_detail_url(
@@ -840,7 +840,7 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
         filter_fields_str = "data_url"
 
         with mock.patch(
-                "latex.views.LatexImageDetail.retrieve"
+                "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
             resp = client.get(
                 self.get_detail_url(
@@ -926,15 +926,10 @@ class Latex2ImageCacheTest(L2ITestMixinBase, TestCase):
 
         filter_fields_str = "data_url"
 
-        with mock.patch(
-                "latex.views.LatexImageDetail.retrieve"
-        ) as mock_api_get, improperly_configured_cache_patch():
-            mock_api_get.return_value = Response()
-            resp = client.get(
-                self.get_detail_url(
-                    instance.tex_key, fields=filter_fields_str))
-            self.assertEqual(resp.status_code, 200)
-            mock_api_get.assert_called_once()
+        resp = client.get(
+            self.get_detail_url(
+                instance.tex_key, fields=filter_fields_str))
+        self.assertEqual(resp.status_code, 200)
 
     @override_settings(L2I_API_CACHE_FIELD="image")
     def test_post_create_field_obj_exist_no_cache(self):
