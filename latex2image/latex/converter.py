@@ -56,6 +56,10 @@ class LatexCompileError(RuntimeError):
     pass
 
 
+class UnknownCompileError(RuntimeError):
+    pass
+
+
 class ImageConvertError(RuntimeError):
     pass
 
@@ -96,6 +100,12 @@ class CommandBase(object):
     def get_bin_path(self):
         return self.cmd.lower()
 
+    def version_popen(self):
+        return popen_wrapper(
+            [self.bin_path, '--version'],
+            stdout_encoding=DEFAULT_LOCALE_ENCODING
+        )
+
     def check(self):
         # type: () -> List[CheckMessage]
         errors = []
@@ -103,10 +113,7 @@ class CommandBase(object):
         self.bin_path = self.get_bin_path()
 
         try:
-            out, err, status = popen_wrapper(
-                [self.bin_path, '--version'],
-                stdout_encoding=DEFAULT_LOCALE_ENCODING
-            )
+            out, err, status = self.version_popen()
         except CommandError as e:
             errors.append(CriticalCheckMessage(
                 msg=e.__str__(),
@@ -118,7 +125,7 @@ class CommandBase(object):
                          "tool": self.name,
                      },
                 obj=self.name,
-                id="%s_E001" % self.name.lower()
+                id="%s.E001" % self.name.lower()
             ))
             return errors
 
@@ -137,7 +144,7 @@ class CommandBase(object):
                          "tool": self.name,
                      },
                 obj=self.name,
-                id = "%s_E002" % self.name.lower()
+                id="%s.E002" % self.name.lower()
             ))
         else:
             version = ".".join(d for d in m.groups() if d)
@@ -154,10 +161,10 @@ class CommandBase(object):
                                  "required": self.min_version,
                                  "version": version},
                         obj=self.name,
-                        id="%s_E003" % self.name.lower()
+                        id="%s.E003" % self.name.lower()
                     ))
             if self.max_version:
-                if parse_version(version) >= parse_version(self.max_version):
+                if parse_version(version) > parse_version(self.max_version):
                     errors.append(CriticalCheckMessage(
                         "Version not supported",
                         hint=("'%(tool)s' with version "
@@ -168,14 +175,13 @@ class CommandBase(object):
                                  "max_version": self.max_version,
                                  "version": version},
                         obj=self.name,
-                        id="%s_E004" % self.name.lower()
+                        id="%s.E004" % self.name.lower()
                     ))
         return errors
 
 
 class TexCompilerBase(CommandBase):
     pass
-
 
 
 class Latexmk(TexCompilerBase):
@@ -273,6 +279,10 @@ class ImageConverter(CommandBase):
         # type: () -> Text
         raise NotImplementedError
 
+    @staticmethod
+    def convert_popen(cmdline, cwd):
+        return popen_wrapper(cmdline, cwd=cwd)
+
     def do_convert(self, compiled_file_path, image_path, working_dir):
         cmdlines = self._get_convert_cmdlines(
             compiled_file_path, image_path)
@@ -280,7 +290,7 @@ class ImageConverter(CommandBase):
         status = None
         error = None
         for cmdline in cmdlines:
-            _output, error, status = popen_wrapper(
+            _output, error, status = self.convert_popen(
                 cmdline,
                 cwd=working_dir
             )
@@ -367,11 +377,13 @@ class ImageMagick(ImageConverter):
         success = True
         error = ""
         try:
-            # resolution is density in ImageMagick, density=96 and quality=85
-            # is google image resolution for images.
-            with wand_image(filename=compiled_file_path, resolution=96) as original:
+            from django.conf import settings
+            resolution = int(
+                getattr(settings, "L2I_IMAGEMAGICK_PNG_RESOLUTION", 96))
+            with wand_image(
+                    filename=compiled_file_path, resolution=resolution
+            ) as original:
                 with original.convert(self.output_format) as converted:
-                    # converted.compression_quality = 85
                     converted.trim()
                     converted.save(filename=image_path)
         except Exception as e:
@@ -390,10 +402,7 @@ def get_data_url(file_path):
     """
     Convert file to data URL
     """
-    try:
-        buf = file_read(file_path)
-    except OSError:
-        raise
+    buf = file_read(file_path)
 
     from mimetypes import guess_type
     mime_type = guess_type(file_path)[0]
@@ -498,6 +507,10 @@ class Tex2ImgBase(object):
             else:
                 shutil.rmtree(self.working_dir)
 
+    def compile_popen(self, cmdline):
+        # This method is introduced for facilitating subprocess tests.
+        return popen_wrapper(cmdline, cwd=self.working_dir)
+
     def get_compiled_file(self):
         # type: () -> Optional[Text]
         """
@@ -521,8 +534,7 @@ class Tex2ImgBase(object):
             ".tex", self.compiled_ext)
 
         cmdline = self.get_compiler_cmdline(tex_path)
-        output, error, status = popen_wrapper(
-            cmdline, cwd=self.working_dir)
+        output, error, status = self.compile_popen(cmdline)
 
         if status != 0:
             try:
@@ -532,22 +544,19 @@ class Tex2ImgBase(object):
                 self._remove_working_dir()
                 raise LatexCompileError(error)
 
-            try:
-                log = get_abstract_latex_log(log).replace("\\n", "\n").strip()
-            except Exception as e:
-                raise e
-            finally:
-                self._remove_working_dir()
-                raise LatexCompileError(log)
+            log = get_abstract_latex_log(log).replace("\\n", "\n").strip()
+            self._remove_working_dir()
+            raise LatexCompileError(log)
 
         if os.path.isfile(compiled_file_path):
             return compiled_file_path
         else:
             self._remove_working_dir()
-            raise LatexCompileError(
+
+            raise UnknownCompileError(
                 string_concat(
-                    "%s." % error,
-                    _('No %s file was produced.')
+                    ("%s." % error) if error else "",
+                    _('No %s file was generated.')
                     % self.compiler.output_format)
             )
 
@@ -558,21 +567,21 @@ class Tex2ImgBase(object):
         :return: string, the data_url
         """
         compiled_file_path = self.get_compiled_file()
-        if not compiled_file_path:
-            return None
+        assert compiled_file_path
+
         image_path = compiled_file_path.replace(
             self.compiled_ext,
             self.image_ext)
 
-        convert_sucess, error = self.converter.do_convert(
+        convert_success, error = self.converter.do_convert(
             compiled_file_path, image_path, self.working_dir)
 
-        if not convert_sucess:
+        if not convert_success:
             self._remove_working_dir()
             raise ImageConvertError(error)
 
         n_images = get_number_of_images(image_path, self.image_ext)
-        # todo: allow multiple images
+
         if n_images == 0:
             raise ImageConvertError(
                 _("No image was generated at % s" % self.working_dir))
@@ -586,6 +595,10 @@ class Tex2ImgBase(object):
 
         try:
             data_url = get_data_url(image_path)
+        except Exception as e:
+            raise ImageConvertError(
+                "%s:%s" % (type(e).__name__, str(e))
+            )
         finally:
             self._remove_working_dir()
 

@@ -26,6 +26,7 @@ from latex.serializers import LatexImageSerializer
 from latex.converter import (
     tex_to_img_converter, LatexCompileError, ALLOWED_COMPILER_FORMAT_COMBINATION,
 )
+from latex.utils import get_codemirror_widget
 
 
 def get_cached_attribute_by_tex_key(tex_key, attr, request=None):
@@ -39,7 +40,7 @@ def get_cached_attribute_by_tex_key(tex_key, attr, request=None):
         cache_key = tex_key
         error_key = "%s_error" % cache_key
     except ImproperlyConfigured:
-        return {}
+        return None
 
     assert cache_key is not None
 
@@ -114,31 +115,25 @@ class StyledFormMixin:
         self.helper.label_class = "col-lg-2"
         self.helper.field_class = "col-lg-8"
 
-    def style_codemirror_widget(self):
-        from codemirror import CodeMirrorTextarea
-        from crispy_forms.layout import Div
-
-        if self.helper.layout is None:
-            from crispy_forms.helper import FormHelper
-            self.helper = FormHelper(self)
-            self._configure_helper()
-
-        self.helper.filter_by_widget(CodeMirrorTextarea).wrap(
-                Div, css_class="relate-codemirror-container")
-
 
 class LatexToImageForm(StyledFormMixin, forms.Form):
     def __init__(self, *args, **kwargs):
         super(LatexToImageForm, self).__init__(*args, **kwargs)
 
         self.fields["latex_file"] = forms.FileField(
-            label=_("Latex File"),
-            required=True)
+            label=_("Tex File"), required=False,
+        )
+
+        self.fields["latex_code"] = forms.CharField(
+            label=_("Tex Code"),
+            widget=get_codemirror_widget(),
+            required=False,
+        )
 
         self.fields["compiler_format"] = forms.ChoiceField(
             choices=tuple(("2".join([compiler, image_format]), "2".join([compiler, image_format]))
                           for compiler, image_format in ALLOWED_COMPILER_FORMAT_COMBINATION),
-            initial=("xelatex", "xelatex"),
+            initial=("xelatex2svg", "xelatex2svg"),
             label=_("compiler"),
             required=True)
 
@@ -146,7 +141,83 @@ class LatexToImageForm(StyledFormMixin, forms.Form):
             required=False)
 
         self.helper.add_input(
-                Submit("upload", _("Upload")))
+                Submit("convert", _("Convert")))
+
+    def clean(self):
+        super(LatexToImageForm, self).clean()
+        if not any([self.cleaned_data.get("latex_file", None),
+                    self.cleaned_data.get("latex_code", None)]):
+            raise forms.ValidationError(
+                _("Either 'Tex File' or 'Tex Code' must be filled.")
+            )
+
+
+@login_required(login_url='/login/')
+def request_get_data_url_from_latex_form_request(request):
+    ctx = {}
+    if request.method == "POST":
+        form = LatexToImageForm(request.POST, request.FILES)
+        if form.is_valid():
+            compiler, image_format = form.cleaned_data["compiler_format"].split("2")
+            tex_key = form.cleaned_data["tex_key"] or None
+
+            tex_source = form.cleaned_data["latex_code"] or None
+
+            added_tex_source_to_ctx = False
+
+            if tex_source is None:
+                f = request.FILES["latex_file"]
+                f.seek(0)
+                tex_source = f.read().decode("utf-8")
+                added_tex_source_to_ctx = True
+
+            if added_tex_source_to_ctx:
+                ctx["tex_source"] = tex_source
+
+            _converter = tex_to_img_converter(
+                compiler, tex_source, image_format=image_format,
+                tex_key=tex_key)
+
+            try:
+                instance = LatexImage.objects.get(tex_key=_converter.tex_key)
+                if instance.compile_error:
+                    ctx["error"] = instance.compile_error
+                ctx["data_url"] = instance.data_url
+
+            except LatexImage.DoesNotExist:
+                try:
+                    data_url = _converter.get_converted_data_url()
+                    new_instance = LatexImage(
+                        tex_key=_converter.tex_key,
+                        data_url=data_url,
+                        creator=request.user,
+                    )
+                    new_instance.save()
+
+                except Exception as e:
+                    from traceback import print_exc
+                    print_exc()
+
+                    tp, err, __ = sys.exc_info()
+                    error_str = "%s: %s" % (tp.__name__, str(err))
+                    ctx["error"] = error_str
+                    if isinstance(e, LatexCompileError):
+                        new_instance = LatexImage(
+                            tex_key=_converter.tex_key,
+                            compile_error=error_str,
+                            creator=request.user,
+                        )
+                        new_instance.save()
+                else:
+                    ctx["data_url"] = data_url
+
+    else:
+        form = LatexToImageForm()
+
+    ctx["form"] = form
+    ctx["form_description"] = _("Convert Latex code to DataUrl")
+
+    return render(request, "latex/latex_form_page.html", ctx)
 
 
 class AuthenticationForm(StyledFormMixin, AuthForm):
@@ -213,66 +284,6 @@ def user_profile(request):
         "form": user_form,
         "form_description": _("User Profile"),
         })
-
-
-@login_required(login_url='/login/')
-def request_get_data_url_from_latex_form_request(request):
-    ctx = {}
-    if request.method == "POST":
-        form = LatexToImageForm(request.POST, request.FILES)
-        if form.is_valid():
-            compiler, image_format = form.cleaned_data["compiler_format"].split("2")
-            tex_key = form.cleaned_data["tex_key"] or None
-
-            f = request.FILES["latex_file"]
-            f.seek(0)
-            tex_source = f.read().decode("utf-8")
-            ctx["tex_source"] = repr(tex_source)
-
-            _converter = tex_to_img_converter(
-                compiler, tex_source, image_format=image_format,
-                tex_key=tex_key)
-
-            try:
-                instance = LatexImage.objects.get(tex_key=_converter.tex_key)
-                if instance.compile_error:
-                    ctx["error"] = instance.compile_error
-                ctx["data_url"] = instance.data_url
-
-            except LatexImage.DoesNotExist:
-                try:
-                    data_url = _converter.get_converted_data_url()
-                    new_instance = LatexImage(
-                        tex_key=_converter.tex_key,
-                        data_url=data_url,
-                        creator=request.user,
-                    )
-                    new_instance.save()
-
-                except Exception as e:
-                    from traceback import print_exc
-                    print_exc()
-
-                    tp, err, __ = sys.exc_info()
-                    error_str = "%s: %s" % (tp.__name__, str(err))
-                    ctx["error"] = error_str
-                    if isinstance(e, LatexCompileError):
-                        new_instance = LatexImage(
-                            tex_key=_converter.tex_key,
-                            compile_error=error_str,
-                            creator=request.user,
-                        )
-                        new_instance.save()
-                else:
-                    ctx["data_url"] = data_url
-
-    else:
-        form = LatexToImageForm()
-
-    ctx["form"] = form
-    ctx["form_description"] = _("Convert Latex code to DataUrl")
-
-    return render(request, "latex/latex_form_page.html", ctx)
 
 
 class FieldsSerializerMixin:
@@ -403,6 +414,14 @@ class LatexImageDetail(
             return LatexImage.objects.filter(creator=self.request.user)
         return LatexImage.objects.all()
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        if instance.compile_error:
+            return Response(serializer.data, status=400)
+        else:
+            return Response(serializer.data)
+
     def get(self, request, *args, **kwargs):
         tex_key = kwargs.get("tex_key")
         assert tex_key is not None
@@ -413,7 +432,8 @@ class LatexImageDetail(
                 cached_result = (
                     get_cached_results_from_request_field_and_tex_key(
                         request, tex_key, fields[0]))
-                return JsonResponse(
-                    cached_result,
-                    status=400 if "compile_error" in cached_result else 200)
-        return super(LatexImageDetail, self).get(request, *args, **kwargs)
+                if cached_result is not None:
+                    return JsonResponse(
+                        cached_result,
+                        status=400 if "compile_error" in cached_result else 200)
+        return self.retrieve(request, *args, **kwargs)

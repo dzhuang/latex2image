@@ -27,17 +27,17 @@ THE SOFTWARE.
 import os
 from subprocess import Popen, PIPE
 
+from codemirror import CodeMirrorTextarea, CodeMirrorJavascript
+
 from django.core.checks import Critical
 from django.core.exceptions import ImproperlyConfigured
 
-from django.core.files import File
 from django.core.management.base import CommandError
 from django.utils.encoding import (
     DEFAULT_LOCALE_ENCODING, force_text)
 from django.utils.text import format_lazy
 
 from typing import Any, Text, List, Tuple, Optional  # noqa
-
 
 # {{{ Constants
 
@@ -50,6 +50,7 @@ ALLOWED_COMPILER_FORMAT_COMBINATION = (
     ("xelatex", "png"),
     ("xelatex", "png")
 )
+
 
 # }}}
 
@@ -91,6 +92,7 @@ def popen_wrapper(args, os_err_exc_type=CommandError,
         p.returncode
     )
 
+
 # }}}
 
 
@@ -100,17 +102,15 @@ def file_read(filename):
     # type: (Text) -> bytes
     '''Read the content of a file and close it properly.'''
     with open(filename, 'rb') as f:
-        ff = File(f)
-        content = ff.read()
-    return content
+        return f.read()
 
 
 def file_write(filename, content):
     # type: (Text, bytes) -> None
     '''Write into a file and close it properly.'''
     with open(filename, 'wb') as f:
-        ff = File(f)
-        ff.write(content)
+        f.write(content)
+
 
 # }}}
 
@@ -129,17 +129,20 @@ LATEX_LOG_OMIT_LINE_STARTS = (
 
 def get_abstract_latex_log(log):
     # type: (Text) -> Text
-    '''abstract error msg from latex compilation log'''
-    msg = log.split(LATEX_ERR_LOG_BEGIN_LINE_STARTS)[1]\
-        .split(LATEX_ERR_LOG_END_LINE_STARTS)[0]
+    """abstract error msg from latex compilation log"""
+    try:
+        msg = log.split(LATEX_ERR_LOG_BEGIN_LINE_STARTS)[1] \
+            .split(LATEX_ERR_LOG_END_LINE_STARTS)[0]
+    except IndexError:
+        return log
 
-    if LATEX_LOG_OMIT_LINE_STARTS:
-        msg = "\n".join(
-            line for line in msg.splitlines()
-            if (not line.startswith(LATEX_LOG_OMIT_LINE_STARTS)
-                and
-                line.strip() != ""))
+    msg = "\n".join(
+        line for line in msg.splitlines()
+        if (not line.startswith(LATEX_LOG_OMIT_LINE_STARTS)
+            and
+            line.strip() != ""))
     return msg
+
 
 # }}}
 
@@ -157,34 +160,73 @@ def get_all_indirect_subclasses(cls):
     return list(set(all_subcls))
 
 
-def replace_latex_space_seperator(s):
-    # type: (Text) -> Text
-    """
-    "{{", "}}", "{%", %}", "{#" and "#}" are used in jinja
-    template, so we have to put spaces between those
-    characters in latex source in the latex macro.
-    To compile the source, we are now removing the spaces.
-    """
-    pattern_list = [
-        r'{ {',
-        r'} }',
-        r'{ #',
-        r'# }',
-        r'{ %',
-        r'% }'
-        ]
-    for pattern in pattern_list:
-        while pattern in s:
-            s = s.replace(pattern, pattern.replace(" ", ""))
-
-    return s
-
-
 class CriticalCheckMessage(Critical):
     def __init__(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         super(CriticalCheckMessage, self).__init__(*args, **kwargs)
         self.obj = self.obj or ImproperlyConfigured.__name__
+
+
+def get_codemirror_widget():
+    # type: (...) ->  CodeMirrorTextarea
+
+    theme = "default"
+
+    addon_css = ("dialog/dialog",
+                 "display/fullscreen",
+                 )
+    addon_js = ("search/searchcursor",
+                "dialog/dialog",
+                "search/search",
+                "comment/comment",
+                "edit/matchbrackets",
+                "display/fullscreen",
+                "selection/active-line",
+                "edit/trailingspace",
+                )
+
+    indent_unit = 2
+
+    config = {
+        "autofocus": True,
+        "fixedGutter": True,
+        "matchBrackets": True,
+        "styleActiveLine": True,
+        "showTrailingSpace": True,
+        "indentUnit": indent_unit,
+        "readOnly": False,
+        "extraKeys": CodeMirrorJavascript("""
+                {
+                  "Ctrl-/": "toggleComment",
+                  "Tab": function(cm)
+                  {
+                    // from https://github.com/codemirror/CodeMirror/issues/988
+
+                    if (cm.doc.somethingSelected()) {
+                        return CodeMirror.Pass;
+                    }
+                    var spacesPerTab = cm.getOption("indentUnit");
+                    var spacesToInsert = (
+                        spacesPerTab
+                        - (cm.doc.getCursor("start").ch % spacesPerTab));
+                    var spaces = Array(spacesToInsert + 1).join(" ");
+                    cm.replaceSelection(spaces, "end", "+input");
+                  },
+                  "Shift-Tab": "indentLess",
+                  "F9": function(cm) {
+                      cm.setOption("fullScreen",
+                        !cm.getOption("fullScreen"));
+                  }
+                }
+            """)
+    }
+
+    return CodeMirrorTextarea(
+        mode="stex",
+        theme=theme,
+        addon_css=addon_css,
+        addon_js=addon_js,
+        config=config)
 
 
 # vim: foldmethod=marker
