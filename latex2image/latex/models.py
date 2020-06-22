@@ -1,3 +1,4 @@
+import os
 import io
 
 from django.db import models
@@ -6,6 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
+from django.core.files.storage import get_storage_class
 
 
 def convert_data_url_to_image_obj(data_url):
@@ -27,13 +29,19 @@ def make_image_file(data_url, file_base_name):
         mime_type, output.tell(), None)
 
 
+class OverwriteStorage(get_storage_class()):
+    def get_available_name(self, name, max_length=None):
+        self.delete(name)
+        return name
+
+
 class LatexImage(models.Model):
     tex_key = models.TextField(
         unique=True, blank=False, db_index=True, verbose_name=_('Tex Key'))
     creation_time = models.DateTimeField(
         blank=False, default=now, verbose_name=_('Creation time'))
     image = models.ImageField(
-        null=True, blank=True, upload_to="l2i_images")
+        null=True, blank=True, upload_to="l2i_images", storage=OverwriteStorage())
     data_url = models.TextField(null=True, blank=True, verbose_name=_('Data Url'))
     compile_error = models.TextField(
         null=True, blank=True, verbose_name=_('Compile Error'))
