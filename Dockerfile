@@ -5,22 +5,11 @@ COPY ["latex2image", "texlive_apt.list", "/opt/latex2image/"]
 COPY extra_fonts /usr/share/fonts/extra_fonts
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends -qq nginx imagemagick curl git memcached unzip $(awk '{print $1'} /opt/latex2image/texlive_apt.list) \
+    && apt-get install -y --no-install-recommends -qq nginx imagemagick curl git memcached $(awk '{print $1'} /opt/latex2image/texlive_apt.list) \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && yes | rm /etc/ImageMagick*/policy.xml \
-    && mkdir -p /usr/share/fonts/extra_fonts \
-    && mkdir -p /usr/share/fonts/otf \
-    && curl -sS "https://raw.githubusercontent.com/adobe-fonts/source-han-serif/release/SubsetOTF/SourceHanSerifCN.zip" -o SourceHanSerifCN.zip \
-    && unzip -p SourceHanSerifCN.zip \
-    && mv SourceHanSerifCN/*.otf /usr/share/fonts/otf \
-    && rm -f SourceHanSerifCN.zip \
-    && curl -sS "https://raw.githubusercontent.com/adobe-fonts/source-han-sans/release/SubsetOTF/SourceHanSansCN.zip" -o SourceHanSansCN.zip \
-    && unzip -pq SourceHanSansCN.zip \
-    && mv SourceHanSansCN/*.otf /usr/share/fonts/otf \
-    && rm -f SourceHanSansCN.zip \
-    && curl -sS "https://github.com/yukai-w/yukai-w.github.io/blob/master/FZKTJW.TTF?raw=true" -o /usr/share/fonts/truetype/FZKTJW.TTF \
     && fc-cache -f
 
 COPY nginx.default /etc/nginx/sites-available/default

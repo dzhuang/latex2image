@@ -6,7 +6,7 @@ CWD=$(pwd)
 APPDIR="$(pwd)/latex2image"
 
 sudo apt-get update
-sudo apt-get -y install --no-install-recommends -qq wget curl imagemagick unzip
+sudo apt-get -y install --no-install-recommends -qq wget curl imagemagick
 sudo apt-get -y install --no-install-recommends -qq $(awk '{print $1'} texlive_apt.list)
 tex --version
 echo codecov >> "$APPDIR"/requirements.txt
@@ -19,18 +19,6 @@ if [[ "$EXTRA_PACKAGE" ]]
 then
   sudo apt-get -y install --no-install-recommends -qq "$EXTRA_PACKAGE"
 fi
-
-echo "-----------install opensource fonts and LICENSES--------------------"
-
-# Install free Fonts and their LICENSE for Chinese
-sudo mkdir -p /usr/share/fonts/otf
-
-curl "https://raw.githubusercontent.com/adobe-fonts/source-han-serif/release/SubsetOTF/SourceHanSerifCN.zip" -o SourceHanSerifCN.zip
-curl "https://raw.githubusercontent.com/adobe-fonts/source-han-sans/release/SubsetOTF/SourceHanSansCN.zip" -o SourceHanSansCN.zip
-sudo wget -q "https://github.com/yukai-w/yukai-w.github.io/blob/master/FZKTJW.TTF?raw=true" -O /usr/share/fonts/truetype/FZKTJW.TTF
-
-sudo unzip SourceHanSerifCN -d /usr/share/fonts/otf
-sudo unzip SourceHanSansCN -d /usr/share/fonts/otf
 
 # Install extra fonts. Compress the fonts you want to include in you own build, and
 # make the file a downloadable link with ".tar.gz" extensions, and the put
