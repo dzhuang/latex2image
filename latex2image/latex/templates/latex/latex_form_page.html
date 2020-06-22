@@ -27,13 +27,31 @@
     </div>
     <div class="container l2i-output">
         <div class="row">
-            {% if error %}
+            {% if instance.compile_error or unknown_error %}
                 <hr>
                 <div class="alert alert-danger no-mathjax">
-                    <h2>{% trans "Error" %}</h2>
+                    <h2>{% if instance.compile_error %}{% trans "Compile Error" %}{% else %}{% trans "Unknown Error" %}{% endif %}</h2>
                     <p>
-                    <pre>{{ error | safe }}</pre>
+                    {% if instance.compile_error %}
+                        <pre>{{ instance.compile_error | safe }}</pre>
+                    {% else %}
+                        <pre>{{ unknown_error | safe }}</pre>
+                    {% endif %}
                     </p>
+                </div>
+            {% endif %}
+            {% if instance.image %}
+                <hr>
+                <div class="alert alert-success no-mathjax">
+                    <h2>{% trans "Image" %}</h2>
+                    <hr>
+                    <div class="well"><img src="{{ instance.data_url }}"/></div>
+                    <hr>
+                    {% if size %}
+                        <div><b>{% trans "size" %}:</b> <span>{{ size |filesizeformat }}</span></div>
+                    {% endif %}
+                    <div><b>{% trans "url" %}:</b> <span> <a href="{{ instance.image.url }}">{{ instance.image.url }}</a></span></div>
+                    <hr>
                 </div>
             {% endif %}
             {% if tex_source %}
@@ -43,20 +61,6 @@
                     <div>
                         <pre>{{ tex_source | safe }}</pre>
                     </div>
-                </div>
-            {% endif %}
-
-            {% if data_url %}
-                <hr>
-                <div class="alert alert-success no-mathjax">
-                    <h2>{% trans "Image" %}</h2>
-                    <hr>
-                    <div><img src="{{ data_url }}"/></div>
-                    <hr>
-                    <h2>{% trans "Data Url" %}</h2>
-                    <hr>
-                    <p style="overflow-wrap: break-word;!important;">{{ data_url }}</p>
-                    <hr>
                 </div>
             {% endif %}
 

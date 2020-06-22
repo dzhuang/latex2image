@@ -38,3 +38,12 @@ class LatexImageSerializer(DynamicFieldsModelSerializer):
                   "creator",
                   )
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if "image" in representation and representation["image"] is not None:
+            image = {
+                "url": representation.pop("image"),
+                "size": instance.image.size,
+            }
+            representation['image'] = image
+        return representation

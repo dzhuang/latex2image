@@ -26,12 +26,14 @@ import sys
 import tempfile
 from functools import wraps
 from io import StringIO
+from urllib.parse import quote
 
 from django.test import Client, override_settings
 from django.core.files.storage import FileSystemStorage
 from django.urls import reverse
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, REDIRECT_FIELD_NAME
 from django.core.exceptions import ImproperlyConfigured
+
 from unittest import mock
 
 
@@ -136,6 +138,10 @@ class SuperuserCreateMixin(ResponseContextMixin):
             **cls.create_superuser_kwargs)
 
     @classmethod
+    def get_login_view_url(cls):
+        return reverse("login")
+
+    @classmethod
     def get_sign_up_view_url(cls):
         return reverse("sign_up")
 
@@ -233,6 +239,16 @@ class SuperuserCreateMixin(ResponseContextMixin):
         for err in errors:
             self.assertIn(err, form_errors)
 
+    @classmethod
+    def concatenate_redirect_url(cls, url, redirect_to=None):
+        if not redirect_to:
+            return url
+        return ('%(url)s?%(next)s=%(bad_url)s' % {
+            'url': url,
+            'next': REDIRECT_FIELD_NAME,
+            'bad_url': quote(redirect_to),
+        })
+
 
 class L2ITestMixinBase(SuperuserCreateMixin):
     _user_create_kwargs = {
@@ -248,7 +264,7 @@ class L2ITestMixinBase(SuperuserCreateMixin):
         # This is important. Don't destroy user data in tests.
         self.l2i_storage_settings_override = (
             override_settings(
-                L2I_IMAGE_STORAGE=FileSystemStorage(temp_storage_dir)))
+                DEFAULT_FILE_STORAGE=FileSystemStorage(temp_storage_dir)))
         self.l2i_storage_settings_override.enable()
         self.addCleanup(self.l2i_storage_settings_override.disable)
 
@@ -339,7 +355,7 @@ class L2ITestMixinBase(SuperuserCreateMixin):
 
 def get_latex_file_dir(folder_name):
     base_dir = os.path.dirname(__file__)
-    return os.path.join(base_dir, folder_name)
+    return os.path.join(base_dir, "resource", folder_name)
 
 
 class suppress_stdout_decorator(object):  # noqa
