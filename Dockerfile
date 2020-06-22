@@ -10,6 +10,7 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && yes | rm /etc/ImageMagick*/policy.xml \
+    && curl https://raw.githubusercontent.com/adobe-fonts/source-han-sans/release/LICENSE.txt \
     && fc-cache -f
 
 COPY nginx.default /etc/nginx/sites-available/default
