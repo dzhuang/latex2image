@@ -229,4 +229,20 @@ def get_codemirror_widget():
         config=config)
 
 
+class StyledFormMixin:
+    def __init__(self, *args, **kwargs):
+        # type: (...) -> None
+        from crispy_forms.helper import FormHelper
+        self.helper = FormHelper()
+        self._configure_helper()
+
+        super().__init__(*args, **kwargs)
+
+    def _configure_helper(self):
+        # type: () -> None
+        self.helper.form_class = "form-horizontal"
+        self.helper.label_class = "col-lg-2"
+        self.helper.field_class = "col-lg-8"
+
+
 # vim: foldmethod=marker

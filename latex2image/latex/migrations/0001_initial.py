@@ -3,6 +3,7 @@ from django.conf import settings
 from django.db import migrations, models
 import os
 import django.utils.timezone
+from latex.models import OverwriteStorage
 
 
 def generate_superuser(apps, schema_editor):
@@ -45,7 +46,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('tex_key', models.TextField(db_index=True, unique=True, verbose_name='Tex Key')),
                 ('creation_time', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Creation time')),
-                ('image', models.ImageField(blank=True, null=True, upload_to='l2i_images')),
+                ('image', models.ImageField(blank=True, null=True, storage=OverwriteStorage(), upload_to='l2i_images')),
                 ('data_url', models.TextField(blank=True, null=True, verbose_name='Data Url')),
                 ('compile_error', models.TextField(blank=True, null=True, verbose_name='Compile Error')),
                 ('creator', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL, verbose_name='Creator')),
