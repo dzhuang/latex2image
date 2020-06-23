@@ -127,9 +127,6 @@ class SuperuserCreateMixin(ResponseContextMixin):
         # create user, course and participation.
         cls.superuser = cls.create_superuser()
         cls.c = Client()
-        cls.settings_git_root_override = (
-            override_settings(GIT_ROOT=tempfile.mkdtemp()))
-        cls.settings_git_root_override.enable()
         super().setUpTestData()
 
     @classmethod
@@ -259,14 +256,12 @@ class L2ITestMixinBase(SuperuserCreateMixin):
     def setUp(self):  # noqa
         temp_storage_dir = tempfile.mkdtemp(prefix="l2i_test_")
 
-        # print(temp_storage_dir)
-
         # This is important. Don't destroy user data in tests.
-        self.l2i_storage_settings_override = (
+        l2i_storage_settings_override = (
             override_settings(
-                DEFAULT_FILE_STORAGE=FileSystemStorage(temp_storage_dir)))
-        self.l2i_storage_settings_override.enable()
-        self.addCleanup(self.l2i_storage_settings_override.disable)
+                MEDIA_ROOT=temp_storage_dir))
+        l2i_storage_settings_override.enable()
+        self.addCleanup(l2i_storage_settings_override.disable)
 
         cache_override = override_settings(
             CACHES={
