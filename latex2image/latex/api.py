@@ -24,12 +24,8 @@ THE SOFTWARE.
 
 import sys
 
-from urllib.parse import urljoin
-
 from django.core.exceptions import ImproperlyConfigured
-from django.db.models.fields.files import ImageFieldFile
 from django.conf import settings
-from django.utils.encoding import filepath_to_uri
 from django.db.transaction import atomic
 
 from rest_framework.parsers import JSONParser
@@ -40,7 +36,8 @@ from rest_framework.renderers import JSONRenderer
 from latex.models import LatexImage
 from latex.serializers import LatexImageSerializer
 from latex.converter import (
-    tex_to_img_converter, LatexCompileError, )
+    tex_to_img_converter, LatexCompileError,
+)
 
 
 class L2IRenderer(JSONRenderer):
@@ -59,92 +56,78 @@ class L2IRenderer(JSONRenderer):
         return super().render(data, accepted_media_type, renderer_context)
 
 
-def get_cached_attribute_by_tex_key(tex_key, attr, request=None):
-    if attr != getattr(settings, "L2I_API_CACHE_FIELD", None):
-        return {}
+def get_field_cache_key(tex_key, field_name):
+    return "%s:%s" % (tex_key, field_name)
 
+
+def get_cached_attribute_by_tex_key(tex_key, attr, request):
     try:
         import django.core.cache as cache
 
         def_cache = cache.caches["default"]
-        cache_key = tex_key
-        error_key = "%s_error" % cache_key
+        cache_key = get_field_cache_key(tex_key, attr)
     except ImproperlyConfigured:
-        return None
-
-    assert cache_key is not None
+        cache_key = None
 
     result_dict = {}
 
-    def update_image(_result_dict, _request):
-        # When image is requested to be cached, make sure image url is
-        # an absolute url irrespective of MEDIA_URL changes.
-        if "image" in _result_dict and _request is not None:
-            image_dict = _result_dict["image"]
-            assert isinstance(image_dict, dict), image_dict
-            _result_dict["image"]["url"] = (
-                request.build_absolute_uri(
-                    urljoin(
-                        settings.MEDIA_URL,
-                        filepath_to_uri(
-                            _result_dict["image"]["url"]))
-                ))
+    if cache_key is not None:
+        # def_cache.delete(cache_key)
+        ret_value = def_cache.get(cache_key)
 
-    attr_value = def_cache.get(cache_key)
-    compile_error_key = def_cache.get(error_key)
+        if ret_value is not None:
+            # print("Got value in cache!")
+            result_dict[attr] = ret_value
+            return result_dict
 
-    if attr_value is not None:
-        assert compile_error_key is None
-        result_dict[attr] = attr_value
-        update_image(result_dict, request)
-        return result_dict
+        compile_error_cache_key = get_field_cache_key(tex_key, "compile_error")
+        cached_compile_error = def_cache.get(compile_error_cache_key)
+        if cached_compile_error is not None:
+            return {"compile_error": cached_compile_error}
 
-    elif compile_error_key is not None:
-        assert attr_value is None
-        result_dict["compile_error"] = compile_error_key
-        return result_dict
+    # print("Getting value from db")
 
     # Check db if it exists
     objs = LatexImage.objects.filter(tex_key=tex_key)
     if not objs.count():
-        return {}
+        return None if request.method == "POST" else {}
 
     obj = objs[0]
-    if obj.compile_error:
-        result_dict["compile_error"] = obj.compile_error
-        def_cache.add(error_key, obj.compile_error, None)
+
+    serializer = LatexImageSerializer(obj, fields=attr, context={"request": request})
+
+    data = serializer.to_representation(obj)
+
+    compile_error = data.pop("compile_error", None)
+    if compile_error is not None:
+        result_dict["compile_error"] = compile_error
+
+        if cache_key is not None:
+            compile_error_cache_key = get_field_cache_key(tex_key, "compile_error")
+            def_cache.add(compile_error_cache_key, obj.compile_error, None)
         return result_dict
 
-    attr_value = getattr(obj, attr)
+    ret_value = data.get(attr, None)
+    if ret_value is None:
+        return None if request.method == "POST" else {}
 
-    assert attr_value is not None, \
-        "Attribute %s of %s can't be None" % (str(obj), attr)
+    # Ignore attribute value with size (byte) over L2I_CACHE_MAX_BYTES
+    if (cache_key is not None
+            and len(str(ret_value)) <= getattr(settings, "L2I_CACHE_MAX_BYTES", 0)):
+        def_cache.add(cache_key, ret_value, None)
 
-    # For Image, we cache its url
-    if isinstance(attr_value, ImageFieldFile):
-        attr_value = {
-            "url": str(attr_value),
-            "size": attr_value.size
-        }
-
-    # ignore attribute value with size (byte) over L2I_CACHE_MAX_BYTES
-    if len(repr(attr_value)) <= getattr(settings, "L2I_CACHE_MAX_BYTES", 0):
-        def_cache.add(cache_key, attr_value, None)
-
-    result_dict[attr] = attr_value
-    update_image(result_dict, request)
+    result_dict[attr] = ret_value
     return result_dict
 
 
-def get_cached_results_from_request_field_and_tex_key(request, tex_key, field_str):
+def get_cached_results_from_field_and_tex_key(tex_key, field_str, request):
     """
     This currently deal with single field ('image' or 'data_url') cache
     """
     cached_result = None
     fields = field_str.split(",")
     if len(fields) == 1:
-        cached_result = get_cached_attribute_by_tex_key(
-            tex_key, fields[0], request=request)
+        cached_result = get_cached_attribute_by_tex_key(tex_key, fields[0], request)
     return cached_result
 
 
@@ -168,8 +151,8 @@ class CreateMixin:
 
         if field_str and tex_key:
             cached_result = (
-                get_cached_results_from_request_field_and_tex_key(
-                    request, tex_key, field_str))
+                get_cached_results_from_field_and_tex_key(
+                    tex_key, field_str, request))
             if cached_result:
                 return Response(cached_result,
                                 status=status.HTTP_200_OK)
@@ -195,7 +178,7 @@ class CreateMixin:
             image_serializer = self.get_serializer(
                 instance, fields=field_str)
             return Response(
-                image_serializer.data, status=201)
+                image_serializer.data, status=status.HTTP_200_OK)
 
         try:
             data_url = _converter.get_converted_data_url()
@@ -270,12 +253,11 @@ class LatexImageDetail(
             fields = fields_str[0].split(",")
             if len(fields) == 1:
                 cached_result = (
-                    get_cached_results_from_request_field_and_tex_key(
-                        request, tex_key, fields[0]))
-                if cached_result is not None:
-                    return Response(
-                        data=cached_result,
-                        status=status.HTTP_200_OK)
+                    get_cached_results_from_field_and_tex_key(
+                        tex_key, fields[0], request))
+                return Response(
+                    data=cached_result,
+                    status=status.HTTP_200_OK)
         return super().get(request, *args, **kwargs)
 
 

@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from latex.models import LatexImage
+from django.conf import settings
 
+from rest_framework.fields import ImageField
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):
     """
@@ -18,7 +20,8 @@ class DynamicFieldsModelSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
 
         if fields is not None:
-            # Drop any fields that are not specified in the `fields` argument.
+            # Drop any fields that are not specified in the `fields` argument
+            # but we will always include "compile_error"
             allowed = set(fields.split(",") + ["compile_error"])
             existing = set(self.fields)
             for field_name in existing - allowed:
@@ -40,10 +43,12 @@ class LatexImageSerializer(DynamicFieldsModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
+        if not getattr(settings, "L2I_API_IMAGE_RETURN_RELATIVE_PATH", True):
+            # if "image" in representation:
+            #     print(representation["image"])
+            #     print(instance.image.url)
+            return representation
+
         if "image" in representation and representation["image"] is not None:
-            image = {
-                "url": representation.pop("image"),
-                "size": instance.image.size,
-            }
-            representation['image'] = image
+            representation['image'] = str(instance.image)
         return representation

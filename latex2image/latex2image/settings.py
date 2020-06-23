@@ -45,6 +45,7 @@ SECRET_KEY = 'v3i#)=ab)8zfqj%!)#nisqyi69jo@@h!0!x1r2&h65d&z6(56u'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('L2I_DEBUG', 'off') == 'on'
+
 # {{{ ALLOWED_HOSTS
 
 ALLOWED_HOSTS = ("127.0.0.1",)
@@ -150,7 +151,7 @@ client = {}
 # valid values are 'image', `data_url`. if set 'image', the absolute url of image
 # will be cached. CompileError will be cached with cache key tex_key + "_error".
 # If not set, no cache will be used.
-L2I_API_CACHE_FIELD = "image"
+L2I_API_CACHE_FIELD = "data_url"
 
 # We are using ImageMagick to convert PDFs to PNG, resolution is density in ImageMagick
 # density=96 and quality=85 is google image resolution for images.
@@ -292,6 +293,15 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR + "/"
 
 # DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+
+# If False, api query only image will return the url of the file according to
+# the MEDIA_URL and MEDIA_ROOT you configured. If True, the relative path of
+# the file in the storage will be returned. Noticing that the returned value
+# will be cached in create and detail view. If False, changes to MEDIA_URL
+# will require a flush of cache.
+
+# L2I_API_IMAGE_RETURN_RELATIVE_PATH = True
+
 # }}}
 
 
