@@ -115,29 +115,29 @@ class CheckBin(CheckL2ISettingsBase):
 
 
 class CheckCacheField(CheckL2ISettingsBase):
-    # test L2I_API_CACHE_FIELD
-    msg_id_prefix = "cache_field"
+    # test L2I_API_IMAGE_RETURNS_RELATIVE_PATH
+    msg_id_prefix = "api_image_returns_relative_path"
 
     @property
     def func(self):
         from latex.checks import settings_check
         return settings_check
 
-    @override_settings(L2I_API_CACHE_FIELD=None)
+    @override_settings(L2I_API_IMAGE_RETURNS_RELATIVE_PATH=None)
     def test_checks_none(self):
         self.assertCheckMessages([])
 
-    @override_settings(L2I_API_CACHE_FIELD=["image"])
-    def test_checks_list(self):
-        self.assertCheckMessages(['cache_field.E001'])
+    @override_settings(L2I_API_IMAGE_RETURNS_RELATIVE_PATH=1)
+    def test_checks_not_bool(self):
+        self.assertCheckMessages(['api_image_returns_relative_path.E001'])
 
-    @override_settings(L2I_API_CACHE_FIELD="data_url")
+    @override_settings(L2I_API_IMAGE_RETURNS_RELATIVE_PATH=True)
     def test_checks_ok(self):
         self.assertCheckMessages([])
 
-    @override_settings(L2I_API_CACHE_FIELD="creator")
-    def test_checks_field_not_allowed(self):
-        self.assertCheckMessages(['cache_field.E002'])
+    @override_settings(L2I_API_IMAGE_RETURNS_RELATIVE_PATH=False)
+    def test_checks_ok2(self):
+        self.assertCheckMessages([])
 
 
 class CheckImageMagickPngResolution(CheckL2ISettingsBase):

@@ -47,22 +47,15 @@ def bin_check(app_configs, **kwargs):
 def settings_check(app_configs, **kwargs):
     errors = []
     from django.conf import settings
-    api_cache_field = getattr(
-        settings, "L2I_API_CACHE_FIELD", None)
-    if api_cache_field is not None:
-        if not isinstance(api_cache_field, str):
+    api_image_returns_relative_path = getattr(
+        settings, "L2I_API_IMAGE_RETURNS_RELATIVE_PATH", None)
+    if api_image_returns_relative_path is not None:
+        if not isinstance(api_image_returns_relative_path, bool):
             errors.append(
                 CriticalCheckMessage(
-                    msg="if set, settings.L2I_API_CACHE_FIELD "
-                        "must be a string",
-                    id="cache_field.E001"))
-            return errors
-        if api_cache_field not in ["image", "data_url"]:
-            errors.append(
-                CriticalCheckMessage(
-                    msg="if set, settings.L2I_API_CACHE_FIELD "
-                        "must be either 'image' or 'data_url'",
-                    id="cache_field.E002"))
+                    msg="if set, settings.L2I_API_IMAGE_RETURNS_RELATIVE_PATH "
+                        "must be a bool value",
+                    id="api_image_returns_relative_path.E001"))
 
     imagemagick_png_resolution = (
         getattr(settings, "L2I_IMAGEMAGICK_PNG_RESOLUTION", None))

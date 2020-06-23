@@ -147,11 +147,6 @@ DATABASES = {
 
 client = {}
 
-# The attribute of LatexImage object to be cached, the key is "tex_key" attribute.
-# valid values are 'image', `data_url`. if set 'image', the absolute url of image
-# will be cached. CompileError will be cached with cache key tex_key + "_error".
-# If not set, no cache will be used.
-L2I_API_CACHE_FIELD = "data_url"
 
 # We are using ImageMagick to convert PDFs to PNG, resolution is density in ImageMagick
 # density=96 and quality=85 is google image resolution for images.
@@ -300,7 +295,7 @@ MEDIA_ROOT = BASE_DIR + "/"
 # will be cached in create and detail view. If False, changes to MEDIA_URL
 # will require a flush of cache.
 
-# L2I_API_IMAGE_RETURN_RELATIVE_PATH = True
+# L2I_API_IMAGE_RETURNS_RELATIVE_PATH = True
 
 # }}}
 

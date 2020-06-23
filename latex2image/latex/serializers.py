@@ -43,7 +43,7 @@ class LatexImageSerializer(DynamicFieldsModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        if not getattr(settings, "L2I_API_IMAGE_RETURN_RELATIVE_PATH", True):
+        if not getattr(settings, "L2I_API_IMAGE_RETURNS_RELATIVE_PATH", True):
             # if "image" in representation:
             #     print(representation["image"])
             #     print(instance.image.url)
