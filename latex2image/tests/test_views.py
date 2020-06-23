@@ -117,7 +117,7 @@ class FormViewTest(L2ITestMixinBase, TestCase):
     def test_post_accidentally_delete_image_file(self):
         self.post_latex_form_view(data=self.get_post_data())
         image = LatexImage.objects.first().image
-        os.remove(str(image))
+        os.remove(image.path)
 
         resp = self.post_latex_form_view(data=self.get_post_data())
         self.assertEqual(resp.status_code, 200)
