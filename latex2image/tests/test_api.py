@@ -215,9 +215,8 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
     def test_get_not_authenticated(self):
         instance = factories.LatexImageFactory()
 
-        client = APIClient()
-        client.force_authenticate(user=None)
-        resp = client.get(
+        self.client.force_authenticate(user=None)
+        resp = self.client.get(
             self.get_detail_url(instance.tex_key))
         self.assertEqual(resp.status_code, 401)
 
@@ -225,45 +224,103 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
         another_user = factories.UserFactory()
         instance = factories.LatexImageFactory(creator=another_user)
 
-        client = APIClient()
-        client.force_authenticate(user=another_user)
-        resp = client.get(
+        self.client.force_authenticate(user=another_user)
+        resp = self.client.get(
             self.get_detail_url(instance.tex_key))
         self.assertEqual(resp.status_code, 200)
 
-        client.force_authenticate(user=self.test_user)
-        resp = client.get(
+        self.client.force_authenticate(user=self.test_user)
+        resp = self.client.get(
             self.get_detail_url(instance.tex_key))
         self.assertEqual(resp.status_code, 404)
 
-        client.force_authenticate(user=self.superuser)
-        resp = client.get(
+        self.client.force_authenticate(user=self.superuser)
+        resp = self.client.get(
             self.get_detail_url(instance.tex_key))
         self.assertEqual(resp.status_code, 200)
 
     def test_get_success(self):
         instance = factories.LatexImageFactory(creator=self.test_user)
 
-        client = APIClient()
-        client.force_authenticate(user=self.test_user)
-        resp = client.get(
+        resp = self.client.get(
             self.get_detail_url(instance.tex_key))
         self.assertEqual(resp.status_code, 200)
 
     def test_get_success_filter_fields(self):
         instance = factories.LatexImageFactory(creator=self.test_user)
 
-        client = APIClient()
-        client.force_authenticate(user=self.test_user)
-
         filter_fields = ["data_url", "creator"]
 
-        resp = client.get(
+        resp = self.client.get(
             self.get_detail_url(instance.tex_key, fields=filter_fields))
         self.assertEqual(resp.status_code, 200)
         response_dict = json.loads(resp.content.decode())
         self.assertEqual(
             sorted(filter_fields), sorted(list(response_dict.keys())))
+
+    def test_put_success(self):
+        first_instance = self.create_n_instances(n=1)[0]
+        first_instance_size = first_instance.image.size
+        first_instance_path = first_instance.image.path
+
+        self.client.post(
+            self.get_list_url(),
+            data=self.get_post_data(),
+            format='json')
+
+        second_instance = LatexImage.objects.last()
+        second_data_url = second_instance.data_url
+        second_instance_size = second_instance.image.size
+        second_instance.delete()
+
+        self.assertEqual(LatexImage.objects.all().count(), 1)
+
+        resp = self.client.put(
+            self.get_detail_url(first_instance.tex_key),
+            data={
+                "tex_key": first_instance.tex_key,
+                "data_url": second_data_url,
+                "creator": self.test_user.pk,
+            }, format='json')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(LatexImage.objects.all().count(), 1)
+
+        # The image is overwrote
+        self.assertEqual(first_instance_path, LatexImage.objects.first().image.path)
+        self.assertEqual(LatexImage.objects.first().data_url, second_data_url)
+        self.assertEqual(LatexImage.objects.first().image.size, second_instance_size)
+        self.assertNotEqual(LatexImage.objects.first().image.size, first_instance_size)
+
+    def test_patch_success(self):
+        first_instance = self.create_n_instances(n=1)[0]
+        first_instance_size = first_instance.image.size
+        first_instance_path = first_instance.image.path
+
+        self.client.post(
+            self.get_list_url(),
+            data=self.get_post_data(),
+            format='json')
+
+        second_instance = LatexImage.objects.last()
+        second_data_url = second_instance.data_url
+        second_instance_size = second_instance.image.size
+        second_instance.delete()
+
+        self.assertEqual(LatexImage.objects.all().count(), 1)
+
+        resp = self.client.patch(
+            self.get_detail_url(first_instance.tex_key),
+            data={
+                "data_url": second_data_url,
+            }, format='json')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(LatexImage.objects.all().count(), 1)
+
+        # The image is overwrote
+        self.assertEqual(first_instance_path, LatexImage.objects.first().image.path)
+        self.assertEqual(LatexImage.objects.first().data_url, second_data_url)
+        self.assertEqual(LatexImage.objects.first().image.size, second_instance_size)
+        self.assertNotEqual(LatexImage.objects.first().image.size, first_instance_size)
 
 
 class LatexCreateAPITest(APITestBaseMixin, TestCase):
@@ -525,8 +582,8 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
             self.test_cache.get(
                 self.get_field_cache_key(filter_fields_str)))
 
-    @override_settings(L2I_API_IMAGE_RETURN_RELATIVE_PATH=False)
-    def test_l2i_api_image_return_relative_path_false_no_http_media_url(self):
+    @override_settings(L2I_API_IMAGE_RETURNS_RELATIVE_PATH=False)
+    def test_L2I_API_IMAGE_RETURNS_RELATIVE_PATH_false_no_http_media_url(self):
         # The query to image will return image url
         filter_fields_str = "image"
 
@@ -540,8 +597,8 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
             self.assertTrue(
                 response_dict["image"].startswith(media_url))
 
-    @override_settings(L2I_API_IMAGE_RETURN_RELATIVE_PATH=False)
-    def test_l2i_api_image_return_relative_path_false_with_http_media_url(self):
+    @override_settings(L2I_API_IMAGE_RETURNS_RELATIVE_PATH=False)
+    def test_L2I_API_IMAGE_RETURNS_RELATIVE_PATH_false_with_http_media_url(self):
         # The query to image will return image url
         filter_fields_str = "image"
 
@@ -593,7 +650,7 @@ class CreateViewCacheTest(CacheTestBase, TestCase):
             sorted(filter_fields_str.split(",")),
             sorted(list(response_dict.keys())))
 
-    @override_settings(L2I_API_IMAGE_RETURN_RELATIVE_PATH=True)
+    @override_settings(L2I_API_IMAGE_RETURNS_RELATIVE_PATH=True)
     def test_post_create_image_not_cached_get_cached_image_return_relative_path(self):
         filter_fields_str = "image"
         cache_key = self.get_field_cache_key(filter_fields_str)
@@ -613,7 +670,7 @@ class CreateViewCacheTest(CacheTestBase, TestCase):
         self.assertTrue(
             self.test_cache.get(cache_key).startswith(IMAGE_PATH_PREFIX))
 
-    @override_settings(L2I_API_IMAGE_RETURN_RELATIVE_PATH=False)
+    @override_settings(L2I_API_IMAGE_RETURNS_RELATIVE_PATH=False)
     def test_post_create_image_not_cached_get_cached_image_return_url(self):
         filter_fields_str = "image"
         cache_key = self.get_field_cache_key(filter_fields_str)
