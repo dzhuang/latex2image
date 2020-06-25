@@ -56,7 +56,7 @@ The following short-handed settings items can be configured in your `docker-comp
 | L2I_LANGUAGE_CODE                  | Language code used (i18n is in developmenet)              |
 | L2I_TZ                     | Timezone used.|
 | L2I_DEBUG                  | For settings.DEBUG. Allowed values [`off`, `on`], default to `off`. | 
-| L2I_API_CACHE_FIELD | A field name which is supposed to be cached since the 1st request when using create and detail api with a `field` querystring. Either `image` (the url of the image) or `latex_url`. Notice that compile error will always be cached. If changed in production server, a flush of cache will be needed.|
+| L2I_API_IMAGE_RETURNS_RELATIVE_PATH | By default, when the return result of API request, the image field will return the relative path of the image file in the storage. If you want it to return the absolute url of the image, set it to `False`, which also need a proper configuration of the `MEDIDA_URL` in your local_settings.|
 | L2I_CACHE_MAX_BYTES | The maximum size above which the attribute won't be cached. |
 | L2I_KEY_VERSION | A string appended to the auto generated `tex_key`, which is used as the identifier of the Tex source code. Default to 1. |
 | DJANGO_SUPERUSER_USERNAME | Superuser name created for the first run. String, no quote. |
@@ -66,6 +66,37 @@ The following short-handed settings items can be configured in your `docker-comp
 
 You can map the folder `latex2image/local_settings` to your local machine in the `voluems` block, and write a file named `local_settings.py` in it
 to override all setting items (including those set in the `docker-compose.yml` file).
+
+### APIs available
+
+The APIs are realized by [Django REST framework](https://www.django-rest-framework.org/). The Token authorization were used to authorize requests, when token available for each user
+in their `\profile` page. When requesting via APIs, you need to add a header `Authorization` with value `Token <your/given/token>`.
+
+| URL | Allowed method      |
+|-----|---------------------|
+| api/create | POST |
+| api/detail/<tex_key> |
+| api/list | GET/POST |  
+
+For POST requests, You can add a `fields` (e.g., {`fields`: `image,creator`}) in the post data to get a result which don't display all the fields. When only on field is specified, the result will be cached. (see below) 
+For GET requests, that was achieved by adding a querystring (`?fields=image,creator`) to GET request for return fields control.
+
+### Cache
+By default, when requesting a single field, via `?fields=<field_name>` in GET or a field name in post data via {"fields": field_name}, the result will be cached.
+For example, if you have a record with:
+
+        {tex_key: "abcd_xelatex_svg_v1",
+         image: "l2i_images/abcd_xelatex_svg_v1.svg",
+         creator: 1,
+         creation_time: 2020-06-25:16:56,
+         compile_error: None
+         }
+
+When `GET` that result with `api/detail/abcd_xelatex_svg_v1?fields="image"`, the result will be cached, i.e., querying using a single field, the result will be cached, else not.
+Noticing that, if the `compile_error` is not null, it will be returned in the data, with response code 400.
+
+For `POST` request,  if you want a field to be cached and returned, you need to add `fields` in the post data (it is also the same for `PUT`).
+
 
 ### Extra packages
 

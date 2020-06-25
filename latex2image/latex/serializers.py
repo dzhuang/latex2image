@@ -2,7 +2,6 @@ from rest_framework import serializers
 from latex.models import LatexImage
 from django.conf import settings
 
-from rest_framework.fields import ImageField
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):
     """
@@ -44,9 +43,6 @@ class LatexImageSerializer(DynamicFieldsModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         if not getattr(settings, "L2I_API_IMAGE_RETURNS_RELATIVE_PATH", True):
-            # if "image" in representation:
-            #     print(representation["image"])
-            #     print(instance.image.url)
             return representation
 
         if "image" in representation and representation["image"] is not None:
