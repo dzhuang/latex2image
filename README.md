@@ -5,7 +5,8 @@
 
 ### Dockerized Service from LaTex code to image
 
-Convert LaTex code to images using a dockerized service.
+Often, when we want to convert a LaTex scripts to images, it is hard to configure the LaTex compile engine, along with
+other dependencies like ImageMagick. This project provide a Dockerized service with a minimal disk space usage (1 GB).
 
 ## Install
     
@@ -23,19 +24,6 @@ Convert LaTex code to images using a dockerized service.
 In your browser, navigate to http://127.0.0.1:8020/, and login with the superuser name you configured in the 
 `docker-compose.yml` (see below).
 
-The APIs are available:
-- `api/list`: List all converted objects, `GET`, `POST`(create new), `PUT`(update) and `DELETE` are allowed. `POST`
-  requests need the following post data:
-  - `tex_source`: string, required.
-  - `image_format`: string, required. Allowed format include `png` and `svg`, when `png` will return a png image with 
-  resolution 96.
-  - `compiler`: string, required. Allowed compiler include `latex`, `pdflatex`, `xelatex` and `lualatex`. Notice that
-  when `compiler` is `latex` while the source code contains `tikz` pictures, it will return `svg` images disregarding 
-  the `image_format` param.
-  - `tex_key`: Optional, see below.
-- `api/create`: Only `POST` requests are allowed.
-- `api/detail/<tex_key>`: Getting information of the converted result with `tex_key`.
-
 Notice:
 - `tex_key`s are auto generated if not provided when `create`. It can be thought of as the query key, when the `tex_key`
  exists in the database, it will return the saved item (as well as compile error raised) instead of doing the convert.
@@ -49,14 +37,14 @@ The following short-handed settings items can be configured in your `docker-comp
 | Django Settings/Environment Variable | Detail                               |
 |--------------------------------------|--------------------------------------|
 | L2I_ALLOWED_HOST_*                  | A host which is to be appended to `settings.ALLOWED_HOSTS` |
-| L2I_MONGODB_HOST                   | The host name of the mongodb used      |
+| L2I_MONGODB_HOST                   | The host name of the mongodb used  |
 | L2I_MONGODB_USERNAME                 | The username of mongodb used   |
 | L2I_MONGODB_PASSWORD                 | The passwd of mongodb used   |
-| L2I_CORS_ORIGIN_WHITELIST_*          | The allowed hosts which will not be checked by CSRF requests. (Notice, need to add `http:\\` or `https:\\` as prefix.) |
-| L2I_LANGUAGE_CODE                  | Language code used (i18n is in developmenet)              |
+| L2I_CORS_ORIGIN_WHITELIST_*          | The allowed hosts which will not be checked by CSRF requests especially for API requests. (Notice, need to add `http:\\` or `https:\\` as prefix.) |
+| L2I_LANGUAGE_CODE                  | Language code used (i18n is under development)              |
 | L2I_TZ                     | Timezone used.|
 | L2I_DEBUG                  | For settings.DEBUG. Allowed values [`off`, `on`], default to `off`. | 
-| L2I_API_CACHE_FIELD | A field name which is supposed to be cached since the 1st request when using create and detail api with a `field` querystring. Either `image` (the url of the image) or `latex_url`. Notice that compile error will always be cached. If changed in production server, a flush of cache will be needed.|
+| L2I_API_IMAGE_RETURNS_RELATIVE_PATH | By default, when the return result of API request, the image field will return the relative path of the image file in the storage. If you want it to return the absolute url of the image, set it to `False`, which also need a proper configuration of the `MEDIA_URL` in your local_settings.|
 | L2I_CACHE_MAX_BYTES | The maximum size above which the attribute won't be cached. |
 | L2I_KEY_VERSION | A string appended to the auto generated `tex_key`, which is used as the identifier of the Tex source code. Default to 1. |
 | DJANGO_SUPERUSER_USERNAME | Superuser name created for the first run. String, no quote. |
@@ -64,8 +52,49 @@ The following short-handed settings items can be configured in your `docker-comp
 
 ### Advanced Configurations
 
-You can map the folder `latex2image/local_settings` to your local machine in the `voluems` block, and write a file named `local_settings.py` in it
+You can map the folder `latex2image/local_settings` to your local machine in the `volumes` block, and write a file named `local_settings.py` in it
 to override all setting items (including those set in the `docker-compose.yml` file).
+
+### APIs available
+
+The APIs are realized by [Django REST framework](https://www.django-rest-framework.org/). The Token authorization were used to authorize requests, when token available for each user
+in their `\profile` page. When requesting via APIs, you need to add a header `Authorization` with value `Token <your/given/token>`.
+
+| URL | Allowed method      |
+|-----|---------------------|
+| api/create | POST |
+| api/detail/<tex_key> | GET/PUT/PATCH/DELETE |
+| api/list | GET/POST |  
+
+- `POST` data:
+  - `tex_source`: string, required.
+  - `image_format`: string, required. Allowed format include `png` and `svg`, when `png` will return a png image with 
+  resolution 96.
+  - `compiler`: string, required. Allowed compiler include `latex`, `pdflatex`, `xelatex` and `lualatex`. Notice that
+  when `compiler` is `latex` while the source code contains `tikz` pictures, it will return `svg` images disregarding 
+  the `image_format` param.
+  - `tex_key`: Optional, a unique identifier, if not provide, it will be generated automatically. Notice that, the image generated will use that key as the base_name.
+  - `fields`: Optional, a string with fields name concatenated by `,`. See below.
+
+- For `POST` requests, with a `fields` (e.g., {`fields`: `image,creator`}) in the post data, you'll get a result which don't display all the fields. When only on field is specified, the result will be cached.
+- For `GET` requests, result fields filtering is achieved by adding a querystring (`?fields=image,creator`).
+
+### Cache
+By default, when requesting a single field, via `?fields=<field_name>` in GET or a field name in post data via {"fields": field_name}, the result will be cached.
+For example, if you have a record with:
+
+        {tex_key: "abcd_xelatex_svg_v1",
+         image: "l2i_images/abcd_xelatex_svg_v1.svg",
+         creator: 1,
+         creation_time: 2020-06-25:16:56,
+         compile_error: None
+         }
+
+When `GET` that result with `api/detail/abcd_xelatex_svg_v1?fields="image"`, the result will be cached, i.e., querying using a single field, the result will be cached, else the results are returned from db queries.
+Noticing that, if the `compile_error` is not null, it will be returned in the data, with response code 400.
+
+For `POST` request,  if you want a field to be cached and returned, you need to add `fields` in the post data (it is also the same for `PUT`). 
+
 
 ### Extra packages
 
@@ -89,7 +118,7 @@ Contributions to the project are welcome.
     # Install test dependancies
     pip install factory_boy
     pip install coverage
-    coverage run manage.py test tests
+    coverage run manage.py test tests && coverage html
 
 
 ## Customized build
