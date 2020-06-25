@@ -25,6 +25,7 @@ THE SOFTWARE.
 import io
 
 from django.db import models
+from django.core.validators import validate_slug
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError
@@ -60,7 +61,7 @@ class OverwriteStorage(get_storage_class()):
 
 class LatexImage(models.Model):
     tex_key = models.TextField(
-        unique=True, blank=False, db_index=True, verbose_name=_('Tex Key'))
+        unique=True, blank=False, db_index=True, verbose_name=_('Tex Key'), validators=[validate_slug])
     creation_time = models.DateTimeField(
         blank=False, default=now, verbose_name=_('Creation time'))
     image = models.ImageField(
