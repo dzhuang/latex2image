@@ -40,8 +40,8 @@ if os.path.isfile(_local_settings_file):
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # https://stackoverflow.com/a/39252623/3437454
-# You should override this in local_settings/local_settings.py
-SECRET_KEY = 'v3i#)=ab)8zfqj%!)#nisqyi69jo@@h!0!x1r2&h65d&z6(56u'
+# You should override this for production
+SECRET_KEY = os.environ.get("L2I_SECRET_KEY", 'v3i#)=ab)8zfqj%!)#nisqyi69jo@@h!0!x1r2&h65d&z6(56u')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('L2I_DEBUG', 'off') == 'on'
@@ -127,40 +127,36 @@ WSGI_APPLICATION = 'latex2image.wsgi.application'
 # {{{ Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
+# https://github.com/nesdis/djongo/issues/390#issuecomment-640847108
+
+db_name = os.environ.get("LATEX_MONGO_DB_NAME", 'latex2image'),
+
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    # },
-    'default': {
-        'ENGINE': 'djongo',
-        'NAME': os.environ.get("LATEX_MONGO_DB_NAME", 'latex2image'),
-        # 'CLIENT':
-        #     {
-        #         'host': os.environ.get("L2I_MONGODB_HOST", 'localhost'),
-        #         'port': int(os.environ.get("L2I_MONGODB_PORT", 27017)),
-        #         'username': os.environ.get("L2I_MONGODB_USERNAME", "admin"),
-        #         'password': os.environ.get("L2I_MONGODB_PASSWORD", "password"),
-        #      }
+        'default': {
+            'ENGINE': 'djongo',
+            'ENFORCE_SCHEMA': True,
+            'LOGGING': {
+                'version': 1,
+                'loggers': {
+                    'djongo': {
+                        'level': 'DEBUG',
+                        'propogate': False,
+                    }
+                },
+             },
+            'NAME': db_name,
+            # 'CLIENT': {
+            #     'host': 'host-name or ip address',
+            #     'port': 27017,
+            #     'username': 'db-username',
+            #     'password': 'password',
+            #     'authSource': 'db-name',
+            #     'authMechanism': 'SCRAM-SHA-1'
+            # }
+        }
     }
-}
 
 client = {}
-
-
-# We are using ImageMagick to convert PDFs to PNG, resolution is density in ImageMagick
-# density=96 and quality=85 is google image resolution for images.
-
-# L2I_IMAGEMAGICK_PNG_RESOLUTION = 96
-
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': '127.0.0.1:11211',
-    }
-}
-
-L2I_CACHE_MAX_BYTES = 65536
 
 # For Mac as the host, set "-e L2I_MONGODB_PORT=docker.for.mac.host.internal"
 # https://stackoverflow.com/a/45002996/3437454
@@ -180,22 +176,30 @@ if mongo_user and mongo_pwd:
 if client and DATABASES["default"]["ENGINE"] == "djongo":
     DATABASES["default"]["CLIENT"] = client
 
+
 # Execute the following in mongo cmdline:
 # > use latex2image
 # switched to db latex2image
-# > db.createUser({user:"admin", pwd: "password", roles: [{role: "readWrite", db:"latex2image"}]})
-# Successfully added user: {
-#         "user" : "admin",
-#         "roles" : [
-#                 {
-#                         "role" : "readWrite",
-#                         "db" : "latex2image"
-#                 }
-#         ]
-# }
+# > db.createUser({user:"your_mongo_user", pwd: "your_passwd", roles: ['root']})
 
 
 # }}}
+
+
+# We are using ImageMagick to convert PDFs to PNG, resolution is density in ImageMagick
+# density=96 and quality=85 is google image resolution for images.
+
+# L2I_IMAGEMAGICK_PNG_RESOLUTION = 96
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+    }
+}
+
+L2I_CACHE_MAX_BYTES = 65536
+
 
 
 # {{{ Password validation

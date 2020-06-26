@@ -36,6 +36,7 @@ The following short-handed settings items can be configured in your `docker-comp
 
 | Django Settings/Environment Variable | Detail                               |
 |--------------------------------------|--------------------------------------|
+| L2I_SECRET_KEY | The [SECRET_KEY](https://docs.djangoproject.com/en/dev/ref/settings/#secret-key) of your server. You need to configure this to keep you data safe.|
 | L2I_ALLOWED_HOST_*                  | A host which is to be appended to `settings.ALLOWED_HOSTS` |
 | L2I_MONGODB_HOST                   | The host name of the mongodb used  |
 | L2I_MONGODB_USERNAME                 | The username of mongodb used   |
