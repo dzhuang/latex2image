@@ -50,8 +50,8 @@
                     {% if size %}
                         <div><b>{% trans "size" %}:</b> <span>{{ size |filesizeformat }}</span></div>
                     {% endif %}
-                    <div><b>{% trans "path" %}:</b> <span> <a href="{{ instance.image }}">{{ instance.image }}</a></span></div>
-                    <hr>
+                    <div><b>{% trans "path" %}:</b> <span> {{ instance.image }}</span></div>
+                    <div><b>{% trans "tex_key" %}:</b> <span> {{ tex_key }}</span></div>
                 </div>
             {% endif %}
             {% if tex_source %}

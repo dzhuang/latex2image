@@ -147,6 +147,7 @@ def request_get_data_url_from_latex_form_request(request):
                     except OSError:
                         pass
                 ctx["instance"] = instance
+                ctx["tex_key"] = instance.tex_key
 
     else:
         form = LatexToImageForm()
