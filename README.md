@@ -42,7 +42,7 @@ The following short-handed settings items can be configured in your `docker-comp
 | L2I_MONGODB_USERNAME                 | The username of mongodb used   |
 | L2I_MONGODB_PASSWORD                 | The passwd of mongodb used   |
 | L2I_CORS_ORIGIN_WHITELIST_*          | The allowed hosts which will not be checked by CSRF requests especially for API requests. (Notice, need to add `http:\\` or `https:\\` as prefix.) |
-| L2I_LANGUAGE_CODE                  | Language code used (i18n is under development)              |
+| L2I_LANGUAGE_CODE                  | [Language code](https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-LANGUAGE_CODE) used for web server.              |
 | L2I_TZ                     | Timezone used.|
 | L2I_DEBUG                  | For settings.DEBUG. Allowed values [`off`, `on`], default to `off`. | 
 | L2I_API_IMAGE_RETURNS_RELATIVE_PATH | By default, when the return result of API request, the image field will return the relative path of the image file in the storage. If you want it to return the absolute url of the image, set it to `False`, which also need a proper configuration of the `MEDIA_URL` in your local_settings.|
