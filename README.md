@@ -21,7 +21,7 @@ other dependencies like ImageMagick. This project provide a Dockerized service w
     docker-compose up -d
 
 ## Usage
-In your browser, navigate to http://127.0.0.1:8020/, and login with the superuser name you configured in the 
+Setup a MongoDB in you computer with default port (27017) opened. In your browser, navigate to http://127.0.0.1:8020/, and login with the superuser name you configured in the 
 `docker-compose.yml` (see below).
 
 Notice:
@@ -54,7 +54,9 @@ The following short-handed settings items can be configured in your `docker-comp
 ### Advanced Configurations
 
 You can map the folder `latex2image/local_settings` to your local machine in the `volumes` block, and write a file named `local_settings.py` in it
-to override all setting items (including those set in the `docker-compose.yml` file).
+to override all setting items (including those set in the `docker-compose.yml` file). Another assumption which makes you need to use the `local_settings.py`
+configurations is, the docker service assume there is a running MongoDB service with 27017 port opened. You can override that by using SQLite3 backends,
+but make sure you have correct volume map of that sqlite3 file, or you data will get lost when the container stops.
 
 ### APIs available
 
@@ -106,12 +108,12 @@ put a `requirements.txt` in it.
 Contributions to the project are welcome.
 
     git clone https://github.com/dzhuang/latex2image.git
-    cd latex2image/latex2image
-
+    cd latex2image
     # Create virtualenv
     python -m virtualenv .env
     source .env/bin/activate
-
+    
+    cd latex2image
     pip install -r requirements.txt
     
     # Do your development...
