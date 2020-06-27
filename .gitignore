@@ -33,3 +33,4 @@ local_settings.py
 /latex2image/.coverage
 /latex2image/htmlcov
 /docker-compose.yml
+/latex2image/tests/*.ipynb
