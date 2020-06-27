@@ -8,6 +8,7 @@ texlive-humanities
 texlive-binaries
 texlive-extra-utils
 texlive-pictures
+texlive-science
 latexmk
 dvipng
 pdf2svg

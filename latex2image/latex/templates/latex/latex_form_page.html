@@ -45,12 +45,12 @@
                 <div class="alert alert-success no-mathjax">
                     <h2>{% trans "Image" %}</h2>
                     <hr>
-                    <div class="well"><img src="{{ instance.data_url }}"/></div>
+                    <div class="well"><img class="img-responsive" style="margin: 0 auto;" src="{{ instance.data_url }}"/></div>
                     <hr>
                     {% if size %}
                         <div><b>{% trans "size" %}:</b> <span>{{ size |filesizeformat }}</span></div>
                     {% endif %}
-                    <div><b>{% trans "url" %}:</b> <span> <a href="{{ instance.image.url }}">{{ instance.image.url }}</a></span></div>
+                    <div><b>{% trans "path" %}:</b> <span> <a href="{{ instance.image }}">{{ instance.image }}</a></span></div>
                     <hr>
                 </div>
             {% endif %}
