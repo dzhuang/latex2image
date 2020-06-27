@@ -584,7 +584,7 @@ class Tex2ImgBase(object):
 
         if n_images == 0:
             raise ImageConvertError(
-                _("No image was generated at % s" % self.working_dir))
+                _("No image was generated at %s" % self.working_dir))
         elif n_images > 1:
             raise ImageConvertError(
                 string_concat(

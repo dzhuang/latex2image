@@ -58,6 +58,7 @@ fi
 
 cd "$APPDIR" || exit 1
 python manage.py makemigrations
+python manage.py makemessages -l zh_Hans --no-location
 
 echo "----Tests started:----"
 coverage run manage.py test tests && coverage report -m && codecov
