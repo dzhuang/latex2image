@@ -8,6 +8,8 @@
 Often, when we want to convert a LaTex scripts to images, it is hard to configure the LaTex compile engine, along with
 other dependencies like ImageMagick. This project provide a Dockerized service with a minimal disk space usage (1 GB).
 
+![screenshot](https://raw.githubusercontent.com/dzhuang/latex2image/master/screenshot.png)
+
 ## Install
     
     docker pull dzhuang/latex2image:latest
