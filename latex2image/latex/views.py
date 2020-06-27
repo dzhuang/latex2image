@@ -152,7 +152,7 @@ def request_get_data_url_from_latex_form_request(request):
         form = LatexToImageForm()
 
     ctx["form"] = form
-    ctx["form_description"] = _("Convert Latex code to DataUrl")
+    ctx["form_description"] = _("Convert LaTex code to Image")
 
     render_kwargs = {
         "request": request,

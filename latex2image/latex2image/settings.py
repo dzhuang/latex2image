@@ -73,7 +73,7 @@ STATICFILES_DIRS = (
         os.path.join(BASE_DIR, "latex2image", "static"),
         )
 
-ADMIN_SITE_HEADER = gettext_noop("Latex2Image Admin")
+ADMIN_SITE_HEADER = gettext_noop("LaTex2Image Admin")
 
 # Application definition
 
@@ -113,6 +113,7 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
