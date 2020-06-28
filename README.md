@@ -51,6 +51,7 @@ The following short-handed settings items can be configured in your `docker-comp
 | L2I_DEBUG                  | For settings.DEBUG. Allowed values [`off`, `on`], default to `off`. | 
 | L2I_API_IMAGE_RETURNS_RELATIVE_PATH | By default, when the return result of API request, the image field will return the relative path of the image file in the storage. If you want it to return the absolute url of the image, set it to `False`, which also need a proper configuration of the `MEDIA_URL` in your local_settings.|
 | L2I_CACHE_MAX_BYTES | The maximum size above which the attribute won't be cached. |
+| L2I_CACHE_DATA_URL_ON_SAVE | Whether cache the `data_url` attribute when a `LatexImage` object is saved. |
 | L2I_KEY_VERSION | A string which will be concatenated in the auto-generated `tex_key`, which is used as the identifier of the Tex source code. Default to 1. |
 | DJANGO_SUPERUSER_USERNAME | Superuser name created for the first run. String, no quote. |
 | DJANGO_SUPERUSER_PASSWORD | Superuser password created for the first run. String, no quote. |
