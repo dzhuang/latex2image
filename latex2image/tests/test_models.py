@@ -3,6 +3,7 @@ from latex.models import LatexImage
 from django.core.exceptions import ValidationError
 
 from tests.base_test_mixins import get_fake_data_url
+from tests import factories
 
 
 class LatexImageModelTest(TestCase):
@@ -21,3 +22,12 @@ class LatexImageModelTest(TestCase):
         )
         with self.assertRaises(ValidationError):
             a.save()
+
+    def test_delete_image_file_deleted(self):
+        instance = factories.LatexImage()
+        import os
+        self.assertTrue(
+            os.path.isfile(instance.image.path))
+
+        instance.delete()
+        self.assertFalse(os.path.isfile(instance.image.path))
