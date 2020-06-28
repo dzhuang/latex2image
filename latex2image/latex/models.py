@@ -73,6 +73,10 @@ class LatexImage(models.Model):
         settings.AUTH_USER_MODEL, verbose_name=_('Creator'),
         on_delete=models.CASCADE)
 
+    class Meta:
+        verbose_name = _("LaTeXImage")
+        verbose_name_plural = _("LaTeXImages")
+
     def save(self, **kwargs):
         # https://stackoverflow.com/a/18803218/3437454
         if self.data_url:

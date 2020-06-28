@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
-from django.conf.global_settings import STATICFILES_FINDERS, gettext_noop
+from django.conf.global_settings import STATICFILES_FINDERS
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -73,7 +73,6 @@ STATICFILES_DIRS = (
         os.path.join(BASE_DIR, "latex2image", "static"),
         )
 
-ADMIN_SITE_HEADER = gettext_noop("LaTex2Image Admin")
 
 # Application definition
 
@@ -96,6 +95,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -273,6 +273,10 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+LOCALE_PATHS = (
+    BASE_DIR + '/locale',
+)
 
 # }}}
 

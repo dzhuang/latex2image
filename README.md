@@ -3,14 +3,15 @@
 [![Build Status](https://travis-ci.org/dzhuang/latex2image.svg?branch=master)](https://travis-ci.org/dzhuang/latex2image)
 [![codecov](https://codecov.io/gh/dzhuang/latex2image/branch/master/graph/badge.svg)](https://codecov.io/gh/dzhuang/latex2image)
 
-### Dockerized Service from LaTex code to image
+### Dockerized Service from LaTeX code to image
 
-Often, when we want to convert a LaTex scripts to images, it is hard to configure the LaTex compile engine, along with
+Often, when we want to convert a LaTeX scripts to images, it is hard to configure the LaTeX compile engine, along with
 other dependencies like ImageMagick. This project provide a Dockerized service with a minimal disk space usage (1 GB).
 
 ![screenshot](https://raw.githubusercontent.com/dzhuang/latex2image/master/screenshot.png)
 
-## Install
+## Install and Usage
+Setup a MongoDB in you computer with default port (27017) opened, then run the following in your command line console:
     
     docker pull dzhuang/latex2image:latest
 
@@ -22,15 +23,16 @@ other dependencies like ImageMagick. This project provide a Dockerized service w
 
     docker-compose up -d
 
-## Usage
-Setup a MongoDB in you computer with default port (27017) opened. In your browser, navigate to http://127.0.0.1:8020/, and login with the superuser name you configured in the 
+In your browser, navigate to http://127.0.0.1:8020/, and login with the superuser name you configured in the 
 `docker-compose.yml` (see below).
 
 Notice:
-- `tex_key`s are auto generated if not provided when `create`. It can be thought of as the query key, when the `tex_key`
- exists in the database, it will return the saved item (as well as compile error raised) instead of doing the convert.
-- No LaTex source code will be saved in the database.
-- Make sure your tex code will compile to only one pdf page, or it will raise errors.
+- `tex_key`s are auto generated if not provided in the form view, or via the `POST` request in API views. 
+It will be stored as the key of the generated result (either the `image` or the `compile_error` )in the database, 
+as well as in the cache, and as the base_name of the image file generated. The key can be used to do the GET, POST, 
+PUT, PATCH and DELETE with the API requests.
+- No LaTeX source code will be saved in the database.
+- Make sure your TeX code will compile to only one pdf page, or it will raise errors.
 
 ## Configurations
 
@@ -49,7 +51,7 @@ The following short-handed settings items can be configured in your `docker-comp
 | L2I_DEBUG                  | For settings.DEBUG. Allowed values [`off`, `on`], default to `off`. | 
 | L2I_API_IMAGE_RETURNS_RELATIVE_PATH | By default, when the return result of API request, the image field will return the relative path of the image file in the storage. If you want it to return the absolute url of the image, set it to `False`, which also need a proper configuration of the `MEDIA_URL` in your local_settings.|
 | L2I_CACHE_MAX_BYTES | The maximum size above which the attribute won't be cached. |
-| L2I_KEY_VERSION | A string appended to the auto generated `tex_key`, which is used as the identifier of the Tex source code. Default to 1. |
+| L2I_KEY_VERSION | A string which will be concatenated in the auto-generated `tex_key`, which is used as the identifier of the Tex source code. Default to 1. |
 | DJANGO_SUPERUSER_USERNAME | Superuser name created for the first run. String, no quote. |
 | DJANGO_SUPERUSER_PASSWORD | Superuser password created for the first run. String, no quote. |
 
