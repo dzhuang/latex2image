@@ -724,7 +724,7 @@ def get_number_of_images(image_path, image_ext):
 def tex_to_img_converter(
         compiler, tex_source, image_format, tex_key=None, **kwargs):
     # type: (Text, Text, Text, Optional[Text], **Any) -> Tex2ImgBase
-    '''Convert LaTex to IMG tag'''
+    '''Convert LaTeX to IMG tag'''
 
     # https://lists.gnu.org/archive/html/dvipng/2010-11/msg00001.html
     if (compiler == "latex"

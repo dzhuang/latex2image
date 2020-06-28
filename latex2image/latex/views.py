@@ -61,11 +61,14 @@ class LatexToImageForm(StyledFormMixin, forms.Form):
                 for compiler, image_format
                 in ALLOWED_COMPILER_FORMAT_COMBINATION),
             initial=("xelatex2svg", "xelatex2svg"),
-            label=_("compiler"),
+            label=_("compiler and format"),
             required=True)
 
         self.fields["tex_key"] = forms.CharField(
-            required=False)
+            required=False,
+            help_text=_("Optional. An unique string act as the identifier "
+                        "of the LaTeX code. If not specified, it will be "
+                        "generated automatically."))
 
         self.helper.form_class = "form-horizontal"
 
@@ -153,7 +156,7 @@ def request_get_data_url_from_latex_form_request(request):
         form = LatexToImageForm()
 
     ctx["form"] = form
-    ctx["form_description"] = _("Convert LaTex code to Image")
+    ctx["form_description"] = _("Convert LaTeX code to Image")
 
     render_kwargs = {
         "request": request,

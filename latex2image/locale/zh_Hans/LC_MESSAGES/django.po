@@ -1,25 +1,20 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# Copyright (C) 2020
+# This file is distributed under the same license as the Latex2image package.
 # Dong Zhuang <dzhuang.scut@gmail.com>, 2020.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-06-27 15:20+0800\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"POT-Creation-Date: 2020-06-28 12:24+0800\n"
+"PO-Revision-Date: 2020-06-28 12:24+0800\n"
+"Last-Translator: Dong zhuang<dzhuang.scut@gmail.com>\n"
+"Language: zh-hans\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
-
-msgid "LaTex2Image Admin"
-msgstr "LaTex2Image 站点管理"
+"Plural-Forms: nplurals=1; plural=0;\n"
 
 msgid "Staff"
 msgstr "管理员"
@@ -33,6 +28,18 @@ msgstr "以 %(username)s 登入"
 
 msgid "Sign in"
 msgstr "登入"
+
+msgid "LaTeX2Image Admin"
+msgstr "LaTeX2Image 站点管理"
+
+msgid "has compile error"
+msgstr "有编译错误"
+
+msgid "Yes"
+msgstr "是"
+
+msgid "No"
+msgstr "否"
 
 msgid "Login"
 msgstr "登入"
@@ -83,6 +90,12 @@ msgstr "编译错误"
 msgid "Creator"
 msgstr "创建者"
 
+msgid "LaTeXImage"
+msgstr ""
+
+msgid "LaTeXImages"
+msgstr ""
+
 msgid "Unknown Error"
 msgstr "未知错误"
 
@@ -95,6 +108,9 @@ msgstr "大小"
 msgid "path"
 msgstr "路径"
 
+msgid "tex_key"
+msgstr ""
+
 msgid "Source Code"
 msgstr "源代码"
 
@@ -104,8 +120,14 @@ msgstr "Tex文件"
 msgid "Tex Code"
 msgstr "Tex代码"
 
-msgid "compiler"
-msgstr "编译器"
+msgid "compiler and format"
+msgstr "编译器 与 图片格式"
+
+msgid ""
+"Optional. An unique string act as the identifier of the LaTeX code. If not "
+"specified, it will be generated automatically."
+msgstr ""
+"可选. 一个作为所输入LaTeX代码的唯一标识的字符串. 如果不输入，它会自动生成."
 
 msgid "Convert"
 msgstr "转换"
@@ -113,5 +135,5 @@ msgstr "转换"
 msgid "Either 'Tex File' or 'Tex Code' must be filled."
 msgstr "'Tex File' 与 'Tex Code' 两者必须填入一个."
 
-msgid "Convert LaTex code to Image"
-msgstr "将LaTex代码转换为图像"
+msgid "Convert LaTeX code to Image"
+msgstr "将LaTeX代码转换为图像"

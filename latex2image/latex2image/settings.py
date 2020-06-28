@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
-from django.conf.global_settings import STATICFILES_FINDERS, gettext_noop
+from django.conf.global_settings import STATICFILES_FINDERS
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -73,7 +73,6 @@ STATICFILES_DIRS = (
         os.path.join(BASE_DIR, "latex2image", "static"),
         )
 
-ADMIN_SITE_HEADER = gettext_noop("LaTex2Image Admin")
 
 # Application definition
 
@@ -85,7 +84,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "crispy_forms",
-    "latex.apps.LatexConfig",
+    "latex.apps.Latex2ImageConfig",
     # CORS
     'corsheaders',
     'rest_framework.authtoken',
@@ -96,6 +95,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -201,6 +201,21 @@ CACHES = {
 
 L2I_CACHE_MAX_BYTES = 65536
 
+# L2I_API_IMAGE_RETURNS_RELATIVE_PATH: Default to True. If False, api query
+# only image will return the url of the file according to the MEDIA_URL and
+# MEDIA_ROOT you configured. If True, the relative path of the file in the
+# storage will be returned. Noticing that the returned value will be cached
+# in create and detail view. If False, changes to MEDIA_URL will require a
+# flush of cache.
+
+# L2I_API_IMAGE_RETURNS_RELATIVE_PATH = True
+
+
+# L2I_CACHE_DATA_URL_ON_SAVE: Default to False. Whether add the data url
+# to cache on object save (create or update). Note that image will be cached
+# on save, while data url can be large in size.
+
+# L2I_CACHE_DATA_URL_ON_SAVE = False
 
 
 # {{{ Password validation
@@ -274,6 +289,10 @@ USE_L10N = True
 
 USE_TZ = True
 
+LOCALE_PATHS = (
+    BASE_DIR + '/locale',
+)
+
 # }}}
 
 LOGIN_URL = "/login/"
@@ -293,14 +312,6 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR + "/"
 
 # DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
-
-# If False, api query only image will return the url of the file according to
-# the MEDIA_URL and MEDIA_ROOT you configured. If True, the relative path of
-# the file in the storage will be returned. Noticing that the returned value
-# will be cached in create and detail view. If False, changes to MEDIA_URL
-# will require a flush of cache.
-
-# L2I_API_IMAGE_RETURNS_RELATIVE_PATH = True
 
 # }}}
 

@@ -1,8 +1,9 @@
 from django.test import TestCase
-from latex.models import LatexImage
 from django.core.exceptions import ValidationError
 
 from tests.base_test_mixins import get_fake_data_url
+
+from latex.models import LatexImage
 
 
 class LatexImageModelTest(TestCase):

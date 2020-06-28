@@ -29,9 +29,13 @@ from django.conf.urls import url, include
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
+from django.utils.translation import ugettext_lazy as _
 
 from latex import api, views, auth
 
+
+admin.site.site_header = _("LaTeX2Image Admin")
+admin.site.site_title = _("LaTeX2Image Admin")
 
 urlpatterns = [
     path('admin/', admin.site.urls),

@@ -23,6 +23,7 @@ THE SOFTWARE.
 """
 
 import io
+from urllib.parse import urljoin
 
 from django.db import models
 from django.core.validators import validate_slug
@@ -32,6 +33,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
 from django.core.files.storage import get_storage_class
+from django.utils.html import mark_safe
 
 
 def convert_data_url_to_image_obj(data_url):
@@ -73,6 +75,10 @@ class LatexImage(models.Model):
         settings.AUTH_USER_MODEL, verbose_name=_('Creator'),
         on_delete=models.CASCADE)
 
+    class Meta:
+        verbose_name = _("LaTeXImage")
+        verbose_name_plural = _("LaTeXImages")
+
     def save(self, **kwargs):
         # https://stackoverflow.com/a/18803218/3437454
         if self.data_url:
@@ -93,6 +99,14 @@ class LatexImage(models.Model):
             raise ValidationError(
                 '"Either data_url" or "compile_error" should '
                 'present.')
+
+    def image_tag(self):
+        if self.image:
+            pattern = '<img style="max-width: 200px;" src="%s"/>'
+            return mark_safe(pattern % urljoin(settings.MEDIA_URL, self.image.url))
+        return None
+
+    image_tag.short_description = _('image')
 
     def __repr__(self):
         if self.data_url:
