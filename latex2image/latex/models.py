@@ -101,12 +101,9 @@ class LatexImage(models.Model):
                 'present.')
 
     def image_tag(self):
-        if self.data_url:
+        if self.image:
             pattern = '<img style="max-width: 200px;" src="%s"/>'
-            try:
-                return mark_safe(pattern % urljoin(settings.MEDIA_URL, self.image.url))
-            except OSError:
-                return mark_safe(pattern % self.data_url)
+            return mark_safe(pattern % urljoin(settings.MEDIA_URL, self.image.url))
         return None
 
     image_tag.short_description = _('image')

@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django import forms
-from django.utils.safestring import mark_safe
 from django.contrib.admin import SimpleListFilter
 from django.utils.translation import ugettext_lazy as _
 
