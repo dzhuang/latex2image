@@ -84,7 +84,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "crispy_forms",
-    "latex.apps.LatexConfig",
+    "latex.apps.Latex2ImageConfig",
     # CORS
     'corsheaders',
     'rest_framework.authtoken',

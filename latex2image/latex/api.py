@@ -27,6 +27,7 @@ import sys
 from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
 from django.db.transaction import atomic
+from django.contrib.auth import get_user_model
 
 from rest_framework.parsers import JSONParser
 from rest_framework import generics, permissions, status
@@ -111,9 +112,11 @@ def get_cached_attribute_by_tex_key(tex_key, attr, request):
     if ret_value is None:
         return None if request.method == "POST" else {}
 
+    assert isinstance(ret_value, str)
+
     # Ignore attribute value with size (byte) over L2I_CACHE_MAX_BYTES
     if (cache_key is not None
-            and len(str(ret_value)) <= getattr(settings, "L2I_CACHE_MAX_BYTES", 0)):
+            and len(ret_value) <= getattr(settings, "L2I_CACHE_MAX_BYTES", 0)):
         def_cache.add(cache_key, ret_value, None)
 
     result_dict[attr] = ret_value

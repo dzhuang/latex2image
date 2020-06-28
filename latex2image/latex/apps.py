@@ -1,7 +1,7 @@
 from django.apps import AppConfig
 
 
-class LatexConfig(AppConfig):
+class Latex2ImageConfig(AppConfig):
     name = 'latex'
 
     def ready(self):

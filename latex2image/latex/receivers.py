@@ -6,12 +6,13 @@ from django.core.exceptions import ImproperlyConfigured
 from rest_framework.authtoken.models import Token
 
 from latex.models import LatexImage
+from latex.serializers import LatexImageSerializer
 from latex.api import get_field_cache_key
 
 
 @receiver(post_save, sender=get_user_model())
 def create_auth_token(sender, instance=None, created=False, **kwargs):
-    if created or getattr(instance, 'from_admin_site', False):
+    if created:
         Token.objects.create(user=instance)
 
 
@@ -36,9 +37,7 @@ def image_delete(sender, instance, **kwargs):
 
     def_cache = cache.caches["default"]
 
-    def_cache.delete(instance.tex_key)
-
-    for attr in ("creation_time", "data_url", "compile_error", "creator"):
+    for attr in ("image", "creation_time", "data_url", "compile_error", "creator"):
         def_cache.delete(get_field_cache_key(instance.tex_key, attr))
 
 
@@ -54,22 +53,26 @@ def create_image_cache_on_save(sender, instance, **kwargs):
 
     from django.conf import settings
 
-    if instance.image:
-        cache_image_relative_path = getattr(
-            settings, "L2I_API_IMAGE_RETURNS_RELATIVE_PATH", True)
-        if cache_image_relative_path:
-            image_cache_value = str(instance.image)
-        else:
-            image_cache_value = instance.image.url
+    serializer = LatexImageSerializer(instance)
+    data = serializer.to_representation(instance)
 
-        def_cache.add(instance.tex_key, image_cache_value, None)
+    attr_to_cache = ["compile_error"]
 
-    other_attr_to_cache = ["compile_error"]
+    if (data["image"]
+            and getattr(settings, "L2I_API_IMAGE_RETURNS_RELATIVE_PATH", True)):
+        # We only cache when image relative path are requested in api
+        # because we can't access the request thus no way to know
+        # the url and can't build the image url.
+
+        attr_to_cache.append("image")
 
     if getattr(settings, "L2I_CACHE_DATA_URL_ON_SAVE", False):
-        other_attr_to_cache.append("data_url")
+        attr_to_cache.append("data_url")
 
-    for attr in other_attr_to_cache:
-        attr_value = getattr(instance, attr)
-        if len(str(attr_value)) <= getattr(settings, "L2I_CACHE_MAX_BYTES", 0):
-            def_cache.add(get_field_cache_key(instance.tex_key, "data_url"), attr_value, None)
+    for attr in attr_to_cache:
+        attr_value = data[attr]
+        if (attr_value is not None
+                and len(str(attr_value)) <= getattr(
+                    settings, "L2I_CACHE_MAX_BYTES", 0)):
+            def_cache.add(
+                get_field_cache_key(instance.tex_key, attr), attr_value, None)

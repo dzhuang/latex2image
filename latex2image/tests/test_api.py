@@ -390,6 +390,9 @@ class CacheTestBase(APITestBaseMixin):
         self.assertEqual(LatexImage.objects.all().count(), 1)
         self.tex_key = tex_key
 
+        # Here we assume all caches are lost for some reason
+        self.test_cache.clear()
+
     def get_field_cache_key(self, field_name, tex_key=None):
         tex_key = tex_key or self.tex_key
         return "%s:%s" % (tex_key, field_name)
@@ -508,9 +511,6 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
         instance = factories.LatexImageErrorFactory(
             tex_key=tex_key, creator=self.test_user)
 
-        self.set_field_cache(
-            "compile_error", value=instance.compile_error, tex_key=tex_key)
-
         filter_fields_str = "image"
 
         with mock.patch(
@@ -534,6 +534,8 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
         tex_key = "what_ever_error_key"
         instance = factories.LatexImageErrorFactory(
             tex_key=tex_key, creator=self.test_user)
+
+        self.test_cache.clear()
 
         filter_fields_str = "image"
 
@@ -614,12 +616,12 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
 
     def test_get_result_with_obj_exist_compile_error_no_cache(self):
         tex_key = "what_ever_error_key"
-        instance = factories.LatexImageErrorFactory(
-            tex_key=tex_key, creator=self.test_user)
-
         filter_fields_str = "image"
 
         with improperly_configured_cache_patch():
+            instance = factories.LatexImageErrorFactory(
+                tex_key=tex_key, creator=self.test_user)
+
             resp = self.client.get(
                 self.get_detail_url(
                     tex_key=instance.tex_key, fields=filter_fields_str),

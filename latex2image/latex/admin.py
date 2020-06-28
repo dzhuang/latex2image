@@ -15,7 +15,7 @@ class LatexImageAdminForm(forms.ModelForm):
 
 class HasCompileErrorFilter(SimpleListFilter):
     title = _('has compile error')
-    parameter_name = 'compile_error'
+    parameter_name = 'has_compile_error'
 
     def lookups(self, request, model_admin):
         return(
@@ -23,20 +23,19 @@ class HasCompileErrorFilter(SimpleListFilter):
             ('n', _('No')))
 
     def queryset(self, request, queryset):
-        if self.value() == 'y':
-            return queryset.filter(compile_error__isnull=False)
-        else:
-            return queryset.filter(compile_error__isnull=True)
+        if self.value() is not None:
+            return queryset.filter(compile_error__isnull=bool(self.value() == "n"))
+        return queryset
 
 
 class LatexImageAdmin(admin.ModelAdmin):
     _readonly_fields = ["data_url", "compile_error"]
-    readonly_fields = ["data_url_image"]
+    readonly_fields = ["image_tag"]
     list_display = (
             "id",
             "tex_key",
             "creation_time",
-            "data_url_image",
+            "image_tag",
             "creator",
     )
     list_filter = ("creation_time", "creator", HasCompileErrorFilter)
@@ -55,16 +54,6 @@ class LatexImageAdmin(admin.ModelAdmin):
             form.base_fields[field_name].disabled = True
 
         return form
-
-    @staticmethod
-    def data_url_image(obj):
-        if obj.data_url:
-            return mark_safe(
-                '<img style="max-width: 200px;" src="{url}"/>'.format(
-                    url=obj.data_url,
-                )
-            )
-        return None
 
 
 admin.site.register(LatexImage, LatexImageAdmin)
