@@ -26,8 +26,6 @@ import sys
 
 from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
-from django.db.transaction import atomic
-from django.contrib.auth import get_user_model
 
 from rest_framework.parsers import JSONParser
 from rest_framework import generics, permissions, status
@@ -210,14 +208,14 @@ class CreateMixin:
         image_serializer = self.get_serializer(data=data)
 
         if image_serializer.is_valid():
-            with atomic():
-                instance = image_serializer.save()
+            instance = image_serializer.save()
             return Response(
                 self.get_serializer(instance, fields=field_str).data,
                 status=status.HTTP_201_CREATED)
         return Response(
+            # For example, tex_key already exists.
             image_serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST)
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class LatexImageCreate(

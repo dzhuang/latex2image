@@ -39,6 +39,7 @@ from tests.base_test_mixins import (
 )
 from latex.models import LatexImage
 from latex.api import LatexImageList
+from latex.converter import get_data_url
 
 IMAGE_PATH_PREFIX = "l2i_images/"
 
@@ -98,6 +99,37 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
             self.get_list_url(), data=self.get_post_data(), format='json')
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(LatexImage.objects.all().count(), self.n_new + 1)
+
+    def test_create_already_exist_just_before_saving_success(self):
+        instance = factories.LatexImageErrorFactory(tex_key="key_already_exists")
+        tex_key = instance.tex_key
+        creator = instance.creator
+        creation_time = instance.creation_time
+        compile_error = instance.compile_error
+        instance.delete()
+
+        def get_data_url_side_effect(file_path):
+            result = get_data_url(file_path)
+            factories.LatexImageErrorFactory(
+                tex_key=tex_key, creator=creator,
+                creation_time=creation_time, compile_error=compile_error)
+            return result
+
+        with mock.patch("latex.converter.get_data_url") as mock_get_data_url:
+            mock_get_data_url.side_effect = (
+                get_data_url_side_effect)
+
+            resp = self.client.post(
+                self.get_list_url(),
+                data=self.get_post_data(
+                    tex_key=tex_key,
+                    creator=creator.pk,
+                    compile_error=compile_error,
+                ), format='json')
+            self.assertEqual(resp.status_code, 500)
+            resp_dict = json.loads(resp.content.decode())
+            self.assertEqual(resp_dict.get("tex_key", None), ['LaTeXImage with this Tex Key already exists.'])
+            self.assertEqual(LatexImage.objects.all().count(), 1)
 
     def test_no_create_duplicate(self):
         first_object = self.create_n_instances()[0]
