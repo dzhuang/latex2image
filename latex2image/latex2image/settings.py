@@ -130,12 +130,13 @@ WSGI_APPLICATION = 'latex2image.wsgi.application'
 
 # https://github.com/nesdis/djongo/issues/390#issuecomment-640847108
 
-db_name = os.environ.get("LATEX_MONGO_DB_NAME", 'latex2image'),
+db_name = os.environ.get("L2I_MONGO_DB_NAME", 'latex2image'),
 
 DATABASES = {
         'default': {
             'ENGINE': 'djongo',
             'ENFORCE_SCHEMA': True,
+            'NAME': db_name,
             'LOGGING': {
                 'version': 1,
                 'loggers': {
@@ -145,7 +146,6 @@ DATABASES = {
                     }
                 },
              },
-            'NAME': db_name,
             # 'CLIENT': {
             #     'host': 'host-name or ip address',
             #     'port': 27017,

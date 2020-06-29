@@ -3,10 +3,11 @@
 [![Build Status](https://travis-ci.org/dzhuang/latex2image.svg?branch=master)](https://travis-ci.org/dzhuang/latex2image)
 [![codecov](https://codecov.io/gh/dzhuang/latex2image/branch/master/graph/badge.svg)](https://codecov.io/gh/dzhuang/latex2image)
 
-### Dockerized Service from LaTeX code to image
+### A Dockerized Service Converting LaTeX code to images
 
-Often, when we want to convert a LaTeX scripts to images, it is hard to configure the LaTeX compile engine, along with
-other dependencies like ImageMagick. This project provide a Dockerized service with a minimal disk space usage (1 GB).
+Often, when we want to convert a LaTeX scripts to images (which is beyond the reach of MathJax), it is hard to configure 
+the LaTeX compile environment. This project provide a Dockerized service which can be deployed within minutes,  with a 
+minimal disk space usage (no more than 1 GB).
 
 ![screenshot](https://raw.githubusercontent.com/dzhuang/latex2image/master/screenshot.png)
 
@@ -26,7 +27,8 @@ Setup a MongoDB in you computer with default port (27017) opened, then run the f
 In your browser, navigate to http://127.0.0.1:8020/, and login with the superuser name you configured in the 
 `docker-compose.yml` (see below).
 
-Notice:
+#### Notice:
+- Using a [dockerized](https://hub.docker.com/_/mongo) mongodb will make it even simpler.
 - `tex_key`s are auto generated if not provided in the form view, or via the `POST` request in API views. 
 It will be stored as the key of the generated result (either the `image` or the `compile_error` )in the database, 
 as well as in the cache, and as the base_name of the image file generated. The key can be used to do the GET, POST, 
@@ -36,15 +38,16 @@ PUT, PATCH and DELETE with the API requests.
 
 ## Configurations
 
-The following short-handed settings items can be configured in your `docker-compose.yml` file.
+The following short-handed settings can be configured in your `docker-compose.yml` file.
 
 | Django Settings/Environment Variable | Detail                               |
 |--------------------------------------|--------------------------------------|
 | L2I_SECRET_KEY | The [SECRET_KEY](https://docs.djangoproject.com/en/dev/ref/settings/#secret-key) of your server. You need to configure this to keep you data safe.|
 | L2I_ALLOWED_HOST_*                  | A host which is to be appended to `settings.ALLOWED_HOSTS` |
 | L2I_MONGODB_HOST                   | The host name of the mongodb used  |
-| L2I_MONGODB_USERNAME                 | The username of mongodb used   |
-| L2I_MONGODB_PASSWORD                 | The passwd of mongodb used   |
+| L2I_MONGO_DB_NAME  | The mongodb database name you prefer. If not set, `latex2image` will be used. |
+| L2I_MONGODB_USERNAME                 | The username of mongodb used. If not set, it will not be set.   |
+| L2I_MONGODB_PASSWORD                 | The passwd of mongodb used.   |
 | L2I_CORS_ORIGIN_WHITELIST_*          | The allowed hosts which will not be checked by CSRF requests especially for API requests. (Notice, need to add `http:\\` or `https:\\` as prefix.) |
 | L2I_LANGUAGE_CODE                  | [Language code](https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-LANGUAGE_CODE) used for web server.              |
 | L2I_TZ                     | Timezone used.|
