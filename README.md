@@ -45,8 +45,9 @@ The following short-handed settings can be configured in your `docker-compose.ym
 | L2I_SECRET_KEY | The [SECRET_KEY](https://docs.djangoproject.com/en/dev/ref/settings/#secret-key) of your server. You need to configure this to keep you data safe.|
 | L2I_ALLOWED_HOST_*                  | A host which is to be appended to `settings.ALLOWED_HOSTS` |
 | L2I_MONGODB_HOST                   | The host name of the mongodb used  |
-| L2I_MONGODB_USERNAME                 | The username of mongodb used   |
-| L2I_MONGODB_PASSWORD                 | The passwd of mongodb used   |
+| L2I_MONGO_DB_NAME  | The mongodb database name you prefer. If not set, `latex2image` will be used. |
+| L2I_MONGODB_USERNAME                 | The username of mongodb used. If not set, it will not be set.   |
+| L2I_MONGODB_PASSWORD                 | The passwd of mongodb used.   |
 | L2I_CORS_ORIGIN_WHITELIST_*          | The allowed hosts which will not be checked by CSRF requests especially for API requests. (Notice, need to add `http:\\` or `https:\\` as prefix.) |
 | L2I_LANGUAGE_CODE                  | [Language code](https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-LANGUAGE_CODE) used for web server.              |
 | L2I_TZ                     | Timezone used.|
