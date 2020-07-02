@@ -3,6 +3,7 @@ texlive-latex-extra
 texlive-xetex
 texlive-luatex
 texlive-plain-generic
+texlive-pstricks
 texlive-fonts-recommended
 texlive-humanities
 texlive-binaries
