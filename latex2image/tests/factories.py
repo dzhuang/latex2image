@@ -22,14 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+import random
+import string
+from base64 import b64encode
+
 import factory
 from django.contrib.auth import get_user_model
 from django.utils.timezone import now
-from latex.models import LatexImage
+
 from latex.converter import build_key
-from base64 import b64encode
-import string
-import random
+from latex.models import LatexImage
 
 
 class UserFactory(factory.django.DjangoModelFactory):

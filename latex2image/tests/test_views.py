@@ -28,11 +28,11 @@ from unittest import mock
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
-
 from tests import factories
-from tests.base_test_mixins import (
-    L2ITestMixinBase, get_latex_file_dir, get_fake_data_url,
-    suppress_stdout_decorator)
+from tests.base_test_mixins import (L2ITestMixinBase, get_fake_data_url,
+                                    get_latex_file_dir,
+                                    suppress_stdout_decorator)
+
 from latex.models import LatexImage
 
 

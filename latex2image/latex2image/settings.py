@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+
 from django.conf.global_settings import STATICFILES_FINDERS
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -21,18 +22,25 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # We put it in a subdir so that we can map it in docker with -v param.
 _local_settings_file = os.path.join(BASE_DIR, "local_settings", "local_settings.py")
 
-if os.environ.get("L2I_LOCAL_TEST_SETTINGS", None):
-    # This is to make sure local_settings.py is not used for unit tests.
+if os.environ.get("L2I_LOCAL_TEST_SETTINGS", None):  # pragma: no cover
+    # This is to make sure settings_for_tests.py is not used for unit tests.
     assert _local_settings_file != os.environ["L2I_LOCAL_TEST_SETTINGS"]
     _local_settings_file = os.environ["L2I_LOCAL_TEST_SETTINGS"]
 
 local_settings = None
-if os.path.isfile(_local_settings_file):
+if os.path.isfile(_local_settings_file):  # pragma: no cover
     local_settings_module = None
+
+    local_settings_package, local_settings_file_name = (
+        os.path.split(_local_settings_file))
+
+    local_settings_package = os.path.split(local_settings_package)[-1]
+
     local_settings_module_name, ext = (
-        os.path.splitext(os.path.split(_local_settings_file)[-1]))
+        os.path.splitext(local_settings_file_name))
     assert ext == ".py"
-    exec("from local_settings import %s as local_settings_module" % local_settings_module_name)
+    exec(f"from {local_settings_package} import {local_settings_module_name}"
+         f" as local_settings_module")
 
     local_settings = local_settings_module.__dict__  # type: ignore  # noqa
 
@@ -41,7 +49,8 @@ if os.path.isfile(_local_settings_file):
 
 # https://stackoverflow.com/a/39252623/3437454
 # You should override this for production
-SECRET_KEY = os.environ.get("L2I_SECRET_KEY", 'v3i#)=ab)8zfqj%!)#nisqyi69jo@@h!0!x1r2&h65d&z6(56u')
+SECRET_KEY = os.environ.get(
+    "L2I_SECRET_KEY", 'v3i#)=ab)8zfqj%!)#nisqyi69jo@@h!0!x1r2&h65d&z6(56u')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('L2I_DEBUG', 'off') == 'on'
@@ -133,29 +142,29 @@ WSGI_APPLICATION = 'latex2image.wsgi.application'
 db_name = os.environ.get("L2I_MONGO_DB_NAME", 'latex2image'),
 
 DATABASES = {
-        'default': {
-            'ENGINE': 'djongo',
-            'ENFORCE_SCHEMA': True,
-            'NAME': db_name,
-            'LOGGING': {
-                'version': 1,
-                'loggers': {
-                    'djongo': {
-                        'level': 'DEBUG',
-                        'propogate': False,
-                    }
-                },
-             },
-            # 'CLIENT': {
-            #     'host': 'host-name or ip address',
-            #     'port': 27017,
-            #     'username': 'db-username',
-            #     'password': 'password',
-            #     'authSource': 'db-name',
-            #     'authMechanism': 'SCRAM-SHA-1'
-            # }
-        }
+    'default': {
+        'ENGINE': 'djongo',
+        'ENFORCE_SCHEMA': True,
+        'NAME': db_name,
+        'LOGGING': {
+            'version': 1,
+            'loggers': {
+                'djongo': {
+                    'level': 'DEBUG',
+                    'propogate': False,
+                }
+            },
+        },
+        # 'CLIENT': {
+        #     'host': 'host-name or ip address',
+        #     'port': 27017,
+        #     'username': 'db-username',
+        #     'password': 'password',
+        #     'authSource': 'db-name',
+        #     'authMechanism': 'SCRAM-SHA-1'
+        # }
     }
+}
 
 client = {}
 
@@ -183,12 +192,10 @@ if client and DATABASES["default"]["ENGINE"] == "djongo":
 # switched to db latex2image
 # > db.createUser({user:"your_mongo_user", pwd: "your_passwd", roles: ['root']})
 
-
 # }}}
 
-
-# We are using ImageMagick to convert PDFs to PNG, resolution is density in ImageMagick
-# density=96 and quality=85 is google image resolution for images.
+# We are using ImageMagick to convert PDFs to PNG, resolution is density
+# in ImageMagick density=96 and quality=85 is google image resolution for images.
 
 # L2I_IMAGEMAGICK_PNG_RESOLUTION = 96
 
@@ -224,16 +231,16 @@ L2I_CACHE_MAX_BYTES = 65536
 if os.environ.get("L2I_ENABLE_PASSWORD_VALIDATORS", False):
     AUTH_PASSWORD_VALIDATORS = [
         {
-            'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+            'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',  # noqa
         },
         {
             'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         },
         {
-            'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+            'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',  # noqa
         },
         {
-            'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+            'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',  # noqa
         },
     ]
 
@@ -242,8 +249,10 @@ if os.environ.get("L2I_ENABLE_PASSWORD_VALIDATORS", False):
 LOGIN_REDIRECT_URL = 'home'
 
 # {{{ CORS settings
-# CORS_ORIGIN_ALLOW_ALL: If True, all origins will be accepted (not use the whitelist below). Defaults to False.
-# CORS_ORIGIN_WHITELIST: List of origins that are authorized to make cross-site HTTP requests. Defaults to []
+# CORS_ORIGIN_ALLOW_ALL: If True, all origins will be accepted
+# (not use the whitelist below). Defaults to False.
+# CORS_ORIGIN_WHITELIST: List of origins that are authorized to make
+# cross-site HTTP requests. Defaults to []
 CORS_ORIGIN_ALLOW_ALL = os.environ.get("L2I_CORS_ORIGIN_ALLOW_ALL", None) is None
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:8020',

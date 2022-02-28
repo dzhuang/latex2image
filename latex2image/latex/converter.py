@@ -24,27 +24,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import os
 import errno
-import sys
-import shutil
+import os
 import re
-from wand.image import Image as wand_image
+import shutil
+import sys
 from hashlib import md5
 
 from django.core.management.base import CommandError
 from django.utils.encoding import DEFAULT_LOCALE_ENCODING
 from django.utils.translation import ugettext as _
+from wand.image import Image as wand_image
 
-from latex.utils import (
-    string_concat, CriticalCheckMessage,
-    popen_wrapper,
-    file_read, file_write, get_abstract_latex_log,
-)
+from latex.utils import (CriticalCheckMessage, file_read, file_write,
+                         get_abstract_latex_log, popen_wrapper, string_concat)
 
 debug = False
 
-from typing import Text, Optional, Any, List, TYPE_CHECKING  # noqa
+from typing import TYPE_CHECKING, Any, List, Optional, Text  # noqa
+
 if TYPE_CHECKING:
     from django.core.checks.messages import CheckMessage  # noqa
 
@@ -187,7 +185,7 @@ class TexCompilerBase(CommandBase):
 class Latexmk(TexCompilerBase):
     name = "latexmk"
     cmd = "latexmk"
-    
+
     # This also require perl, ActivePerl is recommended
     min_version = "4.39"
 
@@ -364,7 +362,7 @@ class ImageMagick(ImageConverter):
     output_format = "png"
 
     def get_bin_path(self):
-        if sys.platform.startswith("win"):  # pragma: no cover, this happens when debugging
+        if sys.platform.startswith("win"):  # pragma: no cover, this happens when debugging  # noqa
             from wand.api import library_paths
             for p in library_paths():
                 if p[0]:
@@ -727,10 +725,8 @@ def tex_to_img_converter(
     '''Convert LaTeX to IMG tag'''
 
     # https://lists.gnu.org/archive/html/dvipng/2010-11/msg00001.html
-    if (compiler == "latex"
-        and image_format == "png"
-        and
-            re.search(TIKZ_PGF_RE, tex_source)):
+    if (compiler == "latex" and image_format == "png"
+            and re.search(TIKZ_PGF_RE, tex_source)):
         image_format = "svg"
 
     assert isinstance(compiler, str)

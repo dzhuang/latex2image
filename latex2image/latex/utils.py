@@ -25,19 +25,15 @@ THE SOFTWARE.
 """
 
 import os
-from subprocess import Popen, PIPE
+from subprocess import PIPE, Popen
+from typing import Any, List, Optional, Text, Tuple  # noqa
 
-from codemirror import CodeMirrorTextarea, CodeMirrorJavascript
-
+from codemirror import CodeMirrorJavascript, CodeMirrorTextarea
 from django.core.checks import Critical
 from django.core.exceptions import ImproperlyConfigured
-
 from django.core.management.base import CommandError
-from django.utils.encoding import (
-    DEFAULT_LOCALE_ENCODING, force_text)
+from django.utils.encoding import DEFAULT_LOCALE_ENCODING, force_text
 from django.utils.text import format_lazy
-
-from typing import Any, Text, List, Tuple, Optional  # noqa
 
 # {{{ Constants
 
@@ -138,9 +134,7 @@ def get_abstract_latex_log(log):
 
     msg = "\n".join(
         line for line in msg.splitlines()
-        if (not line.startswith(LATEX_LOG_OMIT_LINE_STARTS)
-            and
-            line.strip() != ""))
+        if (not line.startswith(LATEX_LOG_OMIT_LINE_STARTS) and line.strip() != ""))
     return msg
 
 

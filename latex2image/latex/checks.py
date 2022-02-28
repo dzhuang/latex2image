@@ -24,8 +24,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from latex.utils import get_all_indirect_subclasses, CriticalCheckMessage
 from django.core.checks import register
+
+from latex.utils import CriticalCheckMessage, get_all_indirect_subclasses
 
 
 def bin_check(app_configs, **kwargs):

@@ -1,11 +1,10 @@
 from random import randint
 
-from django.test import TestCase, RequestFactory
-from django.urls import reverse
 from django.contrib.admin import site
-
-from tests.base_test_mixins import L2ITestMixinBase
+from django.test import RequestFactory, TestCase
+from django.urls import reverse
 from tests import factories
+from tests.base_test_mixins import L2ITestMixinBase
 
 from latex import models
 from latex.admin import LatexImageAdmin

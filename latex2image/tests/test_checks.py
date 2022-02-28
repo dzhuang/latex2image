@@ -24,11 +24,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from latex.converter import CommandBase, Latexmk, Pdf2svg
+from unittest import mock
+
 from django.test import SimpleTestCase
 from django.test.utils import override_settings
 
-from unittest import mock
+from latex.converter import CommandBase, Latexmk, Pdf2svg
 
 
 class CheckL2ISettingsBase(SimpleTestCase):

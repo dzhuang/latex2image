@@ -23,7 +23,7 @@ THE SOFTWARE.
 """
 
 
-from crispy_forms.layout import Submit, Button
+from crispy_forms.layout import Button, Submit
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
@@ -100,4 +100,3 @@ def user_profile(request):
         "form": user_form,
         "form_description": _("User Profile"),
         })
-

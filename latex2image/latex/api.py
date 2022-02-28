@@ -24,19 +24,16 @@ THE SOFTWARE.
 
 import sys
 
-from django.core.exceptions import ImproperlyConfigured
 from django.conf import settings
-
-from rest_framework.parsers import JSONParser
+from django.core.exceptions import ImproperlyConfigured
 from rest_framework import generics, permissions, status
-from rest_framework.response import Response
+from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
 
+from latex.converter import LatexCompileError, tex_to_img_converter
 from latex.models import LatexImage
 from latex.serializers import LatexImageSerializer
-from latex.converter import (
-    tex_to_img_converter, LatexCompileError,
-)
 
 
 class L2IRenderer(JSONRenderer):

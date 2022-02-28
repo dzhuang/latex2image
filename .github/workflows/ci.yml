@@ -1,0 +1,82 @@
+name: Run Tests
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '!**.png'
+      - '!**.jpg'
+      - '!**.jpeg'
+      - '!**.md'
+      - '!**.rst'
+      - '!docker-compose-example.yml'
+      - 'Dockerfile'
+  pull_request:
+    paths:
+      - '!**.png'
+      - '!**.jpg'
+      - '!**.jpeg'
+      - '!**.md'
+      - '!**.rst'
+      - '!docker-compose-example.yml'
+      - 'Dockerfile'
+
+jobs:
+  pytest:
+    name: Python ${{ matrix.python-version }} / Django ${{ matrix.django-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9]
+        django-version: ["<3"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Setup redis
+        uses: supercharge/redis-github-action@1.2.0
+        with:
+          redis-version: 6
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.7.0
+        with:
+          mongodb-version: 4.4
+
+      - name: Install Dependencies
+        working-directory: ./latex2image
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip uninstall -y Django
+          pip install Django${{ matrix.django-version }}
+          pip install -r tests/requirements_test.txt
+          npm install
+
+      - name: Install OS dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq wget curl imagemagick
+          sudo apt-get install -qq $(awk '{print $1'} texlive_apt.list)
+      - name: Run pytest
+        working-directory: ./latex2image
+        run: |
+          pytest --cov-report=xml --cov=.
+      - name: Test make and compile messages
+        working-directory: ./latex2image
+        env:
+          latex2image_FETCH_INFO_INTERVAL: tests/settings_for_tests.py
+        run: |
+          python manage.py makemessages -l zh_Hans
+          python manage.py compilemessages
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          name: ${{ matrix.python-version }} / Django ${{ matrix.django-version }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
