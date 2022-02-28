@@ -29,7 +29,7 @@ from django import forms
 from django.contrib.auth.decorators import login_required
 from django.db.transaction import atomic
 from django.shortcuts import render
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from rest_framework import status
 
 from latex.converter import (ALLOWED_COMPILER_FORMAT_COMBINATION,
