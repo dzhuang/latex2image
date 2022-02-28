@@ -1,0 +1,8 @@
+codecov
+factory_boy
+pytest
+pytest-django
+pytest-factoryboy
+pytest-cov
+pytest-env
+pytest-subtests

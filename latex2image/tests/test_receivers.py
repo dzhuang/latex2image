@@ -1,12 +1,11 @@
 from django.conf import settings
 from django.test import TestCase, override_settings
-
 from tests import factories
-from tests.base_test_mixins import (
-    L2ITestMixinBase, improperly_configured_cache_patch)
+from tests.base_test_mixins import (L2ITestMixinBase,
+                                    improperly_configured_cache_patch)
 
-from latex.models import LatexImage
 from latex.api import get_field_cache_key
+from latex.models import LatexImage
 from latex.serializers import LatexImageSerializer
 
 
@@ -50,7 +49,7 @@ class LatexImageReceiversTest(L2ITestMixinBase, TestCase):
                 get_field_cache_key(instance.tex_key, "compile_error")))
 
     @override_settings(L2I_CACHE_DATA_URL_ON_SAVE=True)
-    def test_image_create_image_url_not_cached(self):
+    def test_image_create_image_url_not_cached2(self):
         instance = factories.LatexImageFactory()
 
         self.assertIsNotNone(

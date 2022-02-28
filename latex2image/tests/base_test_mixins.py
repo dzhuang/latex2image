@@ -26,16 +26,13 @@ import sys
 import tempfile
 from functools import wraps
 from io import StringIO
+from unittest import mock
 from urllib.parse import quote
 
-from django.test import Client, override_settings
-from django.core.files.storage import FileSystemStorage
-from django.urls import reverse
-from django.contrib.auth import get_user_model, REDIRECT_FIELD_NAME
+from django.contrib.auth import REDIRECT_FIELD_NAME, get_user_model
 from django.core.exceptions import ImproperlyConfigured
-
-from unittest import mock
-
+from django.test import Client, override_settings
+from django.urls import reverse
 
 CREATE_SUPERUSER_KWARGS = {
     "username": "test_admin",

@@ -1,6 +1,7 @@
-from rest_framework import serializers
-from latex.models import LatexImage
 from django.conf import settings
+from rest_framework import serializers
+
+from latex.models import LatexImage
 
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):

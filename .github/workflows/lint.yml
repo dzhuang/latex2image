@@ -1,0 +1,66 @@
+name: Linters
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '!**.png'
+      - '!**.jpg'
+      - '!**.jpeg'
+      - '!**.md'
+      - '!**.rst'
+      - '!**.ipynb'
+      - '!docker-compose-example.yml'
+      - 'latex2image/**'
+      - '.github/**'
+  pull_request:
+    paths:
+      - '!**.png'
+      - '!**.jpg'
+      - '!**.jpeg'
+      - '!**.md'
+      - '!**.rst'
+      - '!**.ipynb'
+      - '!docker-compose-example.yml'
+      - 'latex2image/**'
+      - '.github/**'
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install Dependencies
+        working-directory: ./latex2image
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8
+      - name: run Flake8
+        working-directory: ./latex2image
+        run: |
+          flake8 .
+
+  isort:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install isort
+        run: |
+          python -m pip install isort
+      - name: Run isort
+        uses: jamescurtin/isort-action@master
+        with:
+            requirementsFiles: "latex2image/requirements_test.txt"
+            sortPaths: "latex2image"

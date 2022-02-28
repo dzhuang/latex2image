@@ -1,13 +1,12 @@
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured
-
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
+from latex.api import get_field_cache_key
 from latex.models import LatexImage
 from latex.serializers import LatexImageSerializer
-from latex.api import get_field_cache_key
 
 
 @receiver(post_save, sender=get_user_model())

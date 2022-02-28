@@ -23,16 +23,15 @@ THE SOFTWARE.
 """
 
 
-from django.contrib import admin
-from django.urls import path
-from django.conf.urls import url, include
-from django.contrib.auth import views as auth_views
 from django.conf import settings
+from django.conf.urls import include, url
 from django.conf.urls.static import static
+from django.contrib import admin
+from django.contrib.auth import views as auth_views
+from django.urls import path
 from django.utils.translation import ugettext_lazy as _
 
-from latex import api, views, auth
-
+from latex import api, auth, views
 
 admin.site.site_header = _("LaTeX2Image Admin")
 admin.site.site_title = _("LaTeX2Image Admin")
@@ -43,14 +42,16 @@ urlpatterns = [
     url(r"^$", views.request_get_data_url_from_latex_form_request, name="home"),
 
     url(r"^api/list$", api.LatexImageList.as_view(), name="list"),
-    url(r"^api/detail/(?P<tex_key>[a-zA-Z0-9_]+)$", api.LatexImageDetail.as_view(), name="detail"),
+    url(r"^api/detail/(?P<tex_key>[a-zA-Z0-9_]+)$", api.LatexImageDetail.as_view(),
+        name="detail"),
     url(r"^api/create$", api.LatexImageCreate.as_view(), name="create"),
     path('api-auth/', include('rest_framework.urls')),
 
     url(r'^login/$', auth_views.LoginView.as_view(
         template_name='registration/login.html', form_class=auth.AuthenticationForm,
         extra_context={"form_description": "Login"}), name='login'),
-    url(r'^logout/$', auth_views.LogoutView.as_view(template_name='registration/logged_out.html'), name='logout'),
+    url(r'^logout/$', auth_views.LogoutView.as_view(
+        template_name='registration/logged_out.html'), name='logout'),
     url(r'^profile/$', auth.user_profile, name='profile'),
 ]
 

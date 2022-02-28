@@ -1,12 +1,12 @@
 import os
 from unittest import TestCase, mock
 
-from latex.converter import (
-    tex_to_img_converter, get_tex2img_class, ImageConvertError, LatexCompileError,
-    UnknownCompileError
-)
-from latex.utils import file_read, get_abstract_latex_log
 from tests.base_test_mixins import get_latex_file_dir
+
+from latex.converter import (ImageConvertError, LatexCompileError,
+                             UnknownCompileError, get_tex2img_class,
+                             tex_to_img_converter)
+from latex.utils import file_read, get_abstract_latex_log
 
 
 def get_file_content(file_path):
@@ -56,13 +56,15 @@ class TexToImgConverterTest(TestCase):
             for filename in os.listdir(pdflatex_doc_path):
                 file_path = os.path.join(pdflatex_doc_path, filename)
                 with self.subTest(
-                        filename=filename, test_name="pdflatex", image_format=image_format):
+                        filename=filename, test_name="pdflatex",
+                        image_format=image_format):
                     tex_source = get_file_content(file_path).decode("utf-8")
                     data_url = tex_to_img_converter(
                         "pdflatex", tex_source, image_format,
                     ).get_converted_data_url()
                     self.assertIsNotNone(data_url)
-                    self.assertTrue(data_url.startswith("data:image/%s" % image_format))
+                    self.assertTrue(data_url.startswith(
+                        "data:image/%s" % image_format))
 
     def test_latex_png(self):
         latex_doc_path = get_latex_file_dir("latex2png")
@@ -70,13 +72,15 @@ class TexToImgConverterTest(TestCase):
             for filename in os.listdir(latex_doc_path):
                 file_path = os.path.join(latex_doc_path, filename)
                 with self.subTest(
-                        filename=filename, test_name="latex", image_format=image_format):
+                        filename=filename, test_name="latex",
+                        image_format=image_format):
                     tex_source = get_file_content(file_path).decode("utf-8")
                     data_url = tex_to_img_converter(
                         "latex", tex_source, image_format,
                     ).get_converted_data_url()
                     self.assertIsNotNone(data_url)
-                    self.assertTrue(data_url.startswith("data:image/%s" % image_format))
+                    self.assertTrue(
+                        data_url.startswith("data:image/%s" % image_format))
 
     def test_latex_png_tizk_got_svg(self):
         latex_doc_path = get_latex_file_dir("latex2png")
@@ -84,13 +88,15 @@ class TexToImgConverterTest(TestCase):
             for filename in os.listdir(latex_doc_path):
                 file_path = os.path.join(latex_doc_path, filename)
                 with self.subTest(
-                        filename=filename, test_name="latex", image_format=image_format):
+                        filename=filename, test_name="latex",
+                        image_format=image_format):
                     tex_source = get_file_content(file_path).decode("utf-8")
                     data_url = tex_to_img_converter(
                         "latex", tex_source, image_format,
                     ).get_converted_data_url()
                     self.assertIsNotNone(data_url)
-                    self.assertTrue(data_url.startswith("data:image/%s" % image_format))
+                    self.assertTrue(data_url.startswith(
+                        "data:image/%s" % image_format))
 
     def test_more_than_one_pages_error(self):
         latex_doc_path = get_latex_file_dir("pdflatex_multilple_pages")
@@ -98,7 +104,8 @@ class TexToImgConverterTest(TestCase):
             file_path = os.path.join(latex_doc_path, filename)
             image_format = "png"
             with self.subTest(
-                    filename=filename, test_name="pdflatex", image_format=image_format):
+                    filename=filename, test_name="pdflatex",
+                    image_format=image_format):
                 tex_source = get_file_content(file_path).decode("utf-8")
                 with self.assertRaises(ImageConvertError):
                     tex_to_img_converter(

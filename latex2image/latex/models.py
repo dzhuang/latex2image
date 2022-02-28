@@ -25,15 +25,15 @@ THE SOFTWARE.
 import io
 from urllib.parse import urljoin
 
-from django.db import models
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.files.storage import get_storage_class
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.validators import validate_slug
+from django.db import models
+from django.utils.html import mark_safe
 from django.utils.timezone import now
 from django.utils.translation import ugettext_lazy as _
-from django.core.exceptions import ValidationError
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.conf import settings
-from django.core.files.storage import get_storage_class
-from django.utils.html import mark_safe
 
 
 def convert_data_url_to_image_obj(data_url):
@@ -63,7 +63,8 @@ class OverwriteStorage(get_storage_class()):
 
 class LatexImage(models.Model):
     tex_key = models.TextField(
-        unique=True, blank=False, db_index=True, verbose_name=_('Tex Key'), validators=[validate_slug])
+        unique=True, blank=False, db_index=True, verbose_name=_('Tex Key'),
+        validators=[validate_slug])
     creation_time = models.DateTimeField(
         blank=False, default=now, verbose_name=_('Creation time'))
     image = models.ImageField(

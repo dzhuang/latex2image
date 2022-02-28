@@ -25,21 +25,21 @@ THE SOFTWARE.
 
 import json
 import os
-from unittest import mock
 from random import randint
+from unittest import mock
 
 from django.test import TestCase, override_settings
-from rest_framework.test import APIClient, APIRequestFactory, force_authenticate
-
+from rest_framework.test import (APIClient, APIRequestFactory,
+                                 force_authenticate)
 from tests import factories
-from tests.base_test_mixins import (
-    L2ITestMixinBase, get_latex_file_dir, get_fake_data_url,
-    suppress_stdout_decorator,
-    improperly_configured_cache_patch
-)
-from latex.models import LatexImage
+from tests.base_test_mixins import (L2ITestMixinBase, get_fake_data_url,
+                                    get_latex_file_dir,
+                                    improperly_configured_cache_patch,
+                                    suppress_stdout_decorator)
+
 from latex.api import LatexImageList
 from latex.converter import get_data_url
+from latex.models import LatexImage
 
 IMAGE_PATH_PREFIX = "l2i_images/"
 
@@ -128,7 +128,9 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
                 ), format='json')
             self.assertEqual(resp.status_code, 500)
             resp_dict = json.loads(resp.content.decode())
-            self.assertEqual(resp_dict.get("tex_key", None), ['LaTeXImage with this Tex Key already exists.'])
+            self.assertEqual(
+                resp_dict.get("tex_key", None),
+                ['LaTeXImage with this Tex Key already exists.'])
             self.assertEqual(LatexImage.objects.all().count(), 1)
 
     def test_no_create_duplicate(self):
@@ -321,7 +323,8 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
         self.assertEqual(first_instance_path, LatexImage.objects.first().image.path)
         self.assertEqual(LatexImage.objects.first().data_url, second_data_url)
         self.assertEqual(LatexImage.objects.first().image.size, second_instance_size)
-        self.assertNotEqual(LatexImage.objects.first().image.size, first_instance_size)
+        self.assertNotEqual(
+            LatexImage.objects.first().image.size, first_instance_size)
 
     def test_patch_success(self):
         first_instance = self.create_n_instances(n=1)[0]
@@ -352,7 +355,8 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
         self.assertEqual(first_instance_path, LatexImage.objects.first().image.path)
         self.assertEqual(LatexImage.objects.first().data_url, second_data_url)
         self.assertEqual(LatexImage.objects.first().image.size, second_instance_size)
-        self.assertNotEqual(LatexImage.objects.first().image.size, first_instance_size)
+        self.assertNotEqual(
+            LatexImage.objects.first().image.size, first_instance_size)
 
 
 class LatexCreateAPITest(APITestBaseMixin, TestCase):
@@ -685,7 +689,7 @@ class CreateViewCacheTest(CacheTestBase, TestCase):
             sorted(list(response_dict.keys())))
 
     @override_settings(L2I_API_IMAGE_RETURNS_RELATIVE_PATH=True)
-    def test_post_create_image_not_cached_get_cached_image_return_relative_path(self):
+    def test_post_create_image_not_cached_get_cached_image_return_relative_path(self):  # noqa
         filter_fields_str = "image"
         cache_key = self.get_field_cache_key(filter_fields_str)
 
