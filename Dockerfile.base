@@ -5,7 +5,7 @@ ARG USERNAME=l2i_user
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-ARG apt_list_file_name=texlive_apt.list
+ARG apt_list_file_name="texlive_apt.list"
 
 COPY ["latex2image", "${apt_list_file_name}", "/tmp/latex2image/"]
 COPY extra_fonts /usr/share/fonts/extra_fonts

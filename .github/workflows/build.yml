@@ -101,23 +101,23 @@ jobs:
             echo "----No user customized fonts.----"
           fi
 
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-zhhans-base:latest -f Dockerfile.base . --build-arg apt_list_file_name="texlive_apt_zh.list" || exit 1
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-zhhans-base:latest --build-arg apt_list_file_name="texlive_apt_zh.list" -f Dockerfile.base . || exit 1
 
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
           context: .
           build-args: |
-            base: ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-base:latest
+            base=${{ secrets.DOCKERHUB_USERNAME }}/latex2image-base:latest
           push: false
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/latex2image:latest
 
-      - name: Build and push
+      - name: Build and push zh
         uses: docker/build-push-action@v2
         with:
           context: .
           build-args: |
-            base: ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-zhhans-base:latest
+            base=${{ secrets.DOCKERHUB_USERNAME }}/latex2image-zhhans-base:latest
           push: false
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-zhhans:latest
 
