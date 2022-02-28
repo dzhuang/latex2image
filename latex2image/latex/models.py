@@ -33,7 +33,7 @@ from django.core.validators import validate_slug
 from django.db import models
 from django.utils.html import mark_safe
 from django.utils.timezone import now
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 
 def convert_data_url_to_image_obj(data_url):

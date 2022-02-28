@@ -47,8 +47,8 @@ IMAGE_PATH_PREFIX = "l2i_images/"
 class APITestBaseMixin(L2ITestMixinBase, TestCase):
     def setUp(self):
         super().setUp()
-        self.client = APIClient()
-        self.client.force_authenticate(user=self.test_user)
+        self.api_client = APIClient()
+        self.api_client.force_authenticate(user=self.test_user)
 
     @staticmethod
     def get_post_data(file_dir="xelatex", **kwargs):
@@ -78,8 +78,8 @@ class APITestBaseMixin(L2ITestMixinBase, TestCase):
 class LatexListAPITest(APITestBaseMixin, TestCase):
     def test_get_not_authenticated(self):
         self.create_n_instances()
-        self.client.force_authenticate(user=None)
-        resp = self.client.get(self.get_list_url())
+        self.api_client.force_authenticate(user=None)
+        resp = self.api_client.get(self.get_list_url())
         self.assertEqual(resp.status_code, 401)
 
     def test_get_success(self):
@@ -95,7 +95,7 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
 
     def test_create_success(self):
         self.create_n_instances()
-        resp = self.client.post(
+        resp = self.api_client.post(
             self.get_list_url(), data=self.get_post_data(), format='json')
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(LatexImage.objects.all().count(), self.n_new + 1)
@@ -119,7 +119,7 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
             mock_get_data_url.side_effect = (
                 get_data_url_side_effect)
 
-            resp = self.client.post(
+            resp = self.api_client.post(
                 self.get_list_url(),
                 data=self.get_post_data(
                     tex_key=tex_key,
@@ -140,7 +140,7 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
                 "latex.converter.Tex2ImgBase.get_converted_data_url"
         ) as mock_convert:
             mock_convert.return_value = get_fake_data_url("foob=")
-            resp = self.client.post(
+            resp = self.api_client.post(
                 self.get_list_url(),
                 data=self.get_post_data(
                     tex_key=first_object.tex_key), format='json')
@@ -157,7 +157,7 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
                 "latex.converter.Tex2ImgBase.get_converted_data_url"
         ) as mock_convert:
             mock_convert.return_value = get_fake_data_url("foob=")
-            resp = self.client.post(
+            resp = self.api_client.post(
                 self.get_list_url(),
                 data=self.get_post_data(tex_key=tex_key), format='json')
             mock_convert.assert_not_called()
@@ -170,14 +170,14 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
         post_data = self.get_post_data()
         del post_data["tex_source"]
 
-        resp = self.client.post(
+        resp = self.api_client.post(
             self.get_list_url(), data=post_data, format='json')
         self.assertContains(resp, "KeyError", status_code=500)
         self.assertEqual(LatexImage.objects.all().count(), 0)
 
     @suppress_stdout_decorator(suppress_stderr=True)
     def test_converter_init_errored(self):
-        resp = self.client.post(
+        resp = self.api_client.post(
             self.get_list_url(),
             data=self.get_post_data(compiler="latex", image_format="jpg"),
             format="json"
@@ -186,7 +186,7 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
         self.assertEqual(LatexImage.objects.all().count(), 0)
 
     def test_compile_errored(self):
-        resp = self.client.post(
+        resp = self.api_client.post(
             self.get_list_url(),
             data=self.get_post_data(
                 file_dir="lualatex", compiler="latex", image_format="png"),
@@ -203,7 +203,7 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
                 "latex.converter.Tex2ImgBase.get_converted_data_url"
         ) as mock_convert:
             mock_convert.side_effect = RuntimeError(exception_str)
-            resp = self.client.post(
+            resp = self.api_client.post(
                 self.get_list_url(),
                 data=self.get_post_data(),
                 format="json"
@@ -223,7 +223,7 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
             creator=another_user,
             size=n_owned_by_another)
 
-        resp = self.client.get(self.get_list_url())
+        resp = self.api_client.get(self.get_list_url())
         self.assertEqual(
             len(json.loads(resp.content.decode())), self.n_new)
         self.assertEqual(resp.status_code, 200)
@@ -237,8 +237,8 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
             creator=another_user,
             size=n_owned_by_another)
 
-        self.client.force_authenticate(user=self.superuser)
-        resp = self.client.get(self.get_list_url())
+        self.api_client.force_authenticate(user=self.superuser)
+        resp = self.api_client.get(self.get_list_url())
         self.assertEqual(
             len(json.loads(resp.content.decode())),
             n_owned_by_another + self.n_new)
@@ -249,8 +249,8 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
     def test_get_not_authenticated(self):
         instance = factories.LatexImageFactory()
 
-        self.client.force_authenticate(user=None)
-        resp = self.client.get(
+        self.api_client.force_authenticate(user=None)
+        resp = self.api_client.get(
             self.get_detail_url(instance.tex_key))
         self.assertEqual(resp.status_code, 401)
 
@@ -258,25 +258,25 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
         another_user = factories.UserFactory()
         instance = factories.LatexImageFactory(creator=another_user)
 
-        self.client.force_authenticate(user=another_user)
-        resp = self.client.get(
+        self.api_client.force_authenticate(user=another_user)
+        resp = self.api_client.get(
             self.get_detail_url(instance.tex_key))
         self.assertEqual(resp.status_code, 200)
 
-        self.client.force_authenticate(user=self.test_user)
-        resp = self.client.get(
+        self.api_client.force_authenticate(user=self.test_user)
+        resp = self.api_client.get(
             self.get_detail_url(instance.tex_key))
         self.assertEqual(resp.status_code, 404)
 
-        self.client.force_authenticate(user=self.superuser)
-        resp = self.client.get(
+        self.api_client.force_authenticate(user=self.superuser)
+        resp = self.api_client.get(
             self.get_detail_url(instance.tex_key))
         self.assertEqual(resp.status_code, 200)
 
     def test_get_success(self):
         instance = factories.LatexImageFactory(creator=self.test_user)
 
-        resp = self.client.get(
+        resp = self.api_client.get(
             self.get_detail_url(instance.tex_key))
         self.assertEqual(resp.status_code, 200)
 
@@ -285,7 +285,7 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
 
         filter_fields = ["data_url", "creator"]
 
-        resp = self.client.get(
+        resp = self.api_client.get(
             self.get_detail_url(instance.tex_key, fields=filter_fields))
         self.assertEqual(resp.status_code, 200)
         response_dict = json.loads(resp.content.decode())
@@ -297,7 +297,7 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
         first_instance_size = first_instance.image.size
         first_instance_path = first_instance.image.path
 
-        self.client.post(
+        self.api_client.post(
             self.get_list_url(),
             data=self.get_post_data(),
             format='json')
@@ -309,7 +309,7 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
 
         self.assertEqual(LatexImage.objects.all().count(), 1)
 
-        resp = self.client.put(
+        resp = self.api_client.put(
             self.get_detail_url(first_instance.tex_key),
             data={
                 "tex_key": first_instance.tex_key,
@@ -331,7 +331,7 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
         first_instance_size = first_instance.image.size
         first_instance_path = first_instance.image.path
 
-        self.client.post(
+        self.api_client.post(
             self.get_list_url(),
             data=self.get_post_data(),
             format='json')
@@ -343,7 +343,7 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
 
         self.assertEqual(LatexImage.objects.all().count(), 1)
 
-        resp = self.client.patch(
+        resp = self.api_client.patch(
             self.get_detail_url(first_instance.tex_key),
             data={
                 "data_url": second_data_url,
@@ -361,7 +361,7 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
 
 class LatexCreateAPITest(APITestBaseMixin, TestCase):
     def test_create_success_svg(self):
-        resp = self.client.post(
+        resp = self.api_client.post(
             self.get_list_url(),
             data=self.get_post_data(
                 file_dir="latex2svg", image_format="svg",
@@ -375,7 +375,7 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
     def test_no_create_success(self):
         first_instance = self.create_n_instances()[0]
 
-        resp = self.client.post(
+        resp = self.api_client.post(
             self.get_creat_url(),
             data=self.get_post_data(tex_key=first_instance.tex_key),
             format='json')
@@ -385,7 +385,7 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
     def test_create_success(self):
         self.create_n_instances()
 
-        resp = self.client.post(
+        resp = self.api_client.post(
             self.get_creat_url(),
             data=self.get_post_data(tex_key="whatever"),
             format='json')
@@ -397,7 +397,7 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
         post_data = self.get_post_data()
         del post_data["tex_source"]
 
-        resp = self.client.post(
+        resp = self.api_client.post(
             self.get_creat_url(), data=post_data, format='json')
         self.assertContains(resp, "KeyError", status_code=500)
         self.assertEqual(LatexImage.objects.all().count(), 0)
@@ -405,7 +405,7 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
     def test_create_success_filter_fields(self):
         filter_fields_str = "data_url,creation_time"
 
-        resp = self.client.post(
+        resp = self.api_client.post(
             self.get_creat_url(),
             data=self.get_post_data(tex_key="whatever", fields=filter_fields_str),
             format='json')
@@ -456,7 +456,7 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
         with mock.patch(
                 "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
-            resp = self.client.get(
+            resp = self.api_client.get(
                 self.get_detail_url(
                     self.tex_key, fields=filter_fields_str))
             mock_api_get.assert_not_called()
@@ -475,7 +475,7 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
         with mock.patch(
                 "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
-            resp = self.client.get(
+            resp = self.api_client.get(
                 self.get_detail_url(
                     self.tex_key, fields=filter_fields_str))
             mock_api_get.assert_not_called()
@@ -491,7 +491,7 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
         with mock.patch(
                 "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
-            resp = self.client.get(
+            resp = self.api_client.get(
                 self.get_detail_url(
                     self.tex_key, fields=filter_fields_str))
             mock_api_get.assert_not_called()
@@ -516,7 +516,7 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
         with mock.patch(
                 "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
-            resp = self.client.get(
+            resp = self.api_client.get(
                 self.get_detail_url(
                     tex_key=tex_key, fields=filter_fields_str))
             mock_api_get.assert_not_called()
@@ -533,7 +533,7 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
         with mock.patch(
                 "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
-            resp = self.client.get(
+            resp = self.api_client.get(
                 self.get_detail_url(
                     tex_key=self.tex_key, fields=filter_fields_str))
             mock_api_get.assert_not_called()
@@ -552,7 +552,7 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
         with mock.patch(
                 "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
-            resp = self.client.get(
+            resp = self.api_client.get(
                 self.get_detail_url(
                     tex_key=tex_key, fields=filter_fields_str),
                 format='json')
@@ -578,7 +578,7 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
         with mock.patch(
                 "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
-            resp = self.client.get(
+            resp = self.api_client.get(
                 self.get_detail_url(
                     tex_key=tex_key, fields=filter_fields_str),
                 format='json')
@@ -605,7 +605,7 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
         with mock.patch(
                 "rest_framework.generics.RetrieveUpdateDestroyAPIView.get"
         ) as mock_api_get:
-            resp = self.client.get(
+            resp = self.api_client.get(
                 self.get_detail_url(
                     self.tex_key, fields=filter_fields_str))
             mock_api_get.assert_not_called()
@@ -627,7 +627,7 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
 
         media_url = "http://testserver/my_media/"
         with override_settings(MEDIA_URL="/my_media/"):
-            resp = self.client.get(
+            resp = self.api_client.get(
                 self.get_detail_url(
                     self.tex_key, fields=filter_fields_str))
             response_dict = json.loads(resp.content.decode())
@@ -642,7 +642,7 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
 
         media_url = "http://my_example_testserver.com/my_media/"
         with override_settings(MEDIA_URL=media_url):
-            resp = self.client.get(
+            resp = self.api_client.get(
                 self.get_detail_url(
                     self.tex_key, fields=filter_fields_str))
             response_dict = json.loads(resp.content.decode())
@@ -658,7 +658,7 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
             instance = factories.LatexImageErrorFactory(
                 tex_key=tex_key, creator=self.test_user)
 
-            resp = self.client.get(
+            resp = self.api_client.get(
                 self.get_detail_url(
                     tex_key=instance.tex_key, fields=filter_fields_str),
                 format='json')
@@ -673,7 +673,7 @@ class CreateViewCacheTest(CacheTestBase, TestCase):
         filter_fields_str = "data_url"
         cache_key = self.get_field_cache_key(filter_fields_str)
 
-        resp = self.client.post(
+        resp = self.api_client.post(
             self.get_creat_url(),
             data=self.get_post_data(
                 tex_key=self.tex_key, fields=filter_fields_str),
@@ -693,7 +693,7 @@ class CreateViewCacheTest(CacheTestBase, TestCase):
         filter_fields_str = "image"
         cache_key = self.get_field_cache_key(filter_fields_str)
 
-        resp = self.client.post(
+        resp = self.api_client.post(
             self.get_creat_url(),
             data=self.get_post_data(
                 tex_key=self.tex_key, fields=filter_fields_str),
@@ -713,7 +713,7 @@ class CreateViewCacheTest(CacheTestBase, TestCase):
         filter_fields_str = "image"
         cache_key = self.get_field_cache_key(filter_fields_str)
 
-        resp = self.client.post(
+        resp = self.api_client.post(
             self.get_creat_url(),
             data=self.get_post_data(
                 tex_key=self.tex_key, fields=filter_fields_str),
@@ -730,7 +730,7 @@ class CreateViewCacheTest(CacheTestBase, TestCase):
         filter_fields_str = "image"
 
         with improperly_configured_cache_patch():
-            resp = self.client.post(
+            resp = self.api_client.post(
                 self.get_creat_url(),
                 data=self.get_post_data(
                     tex_key=self.tex_key, fields=filter_fields_str),

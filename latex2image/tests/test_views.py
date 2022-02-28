@@ -27,7 +27,7 @@ import os
 from unittest import mock
 
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import Client, TestCase
 from tests import factories
 from tests.base_test_mixins import (L2ITestMixinBase, get_fake_data_url,
                                     get_latex_file_dir,
@@ -37,9 +37,15 @@ from latex.models import LatexImage
 
 
 class FormViewTest(L2ITestMixinBase, TestCase):
+    @classmethod
+    def setUpTestData(cls):  # noqa
+        super().setUpTestData()
+        client = Client()
+        client.force_login(cls.test_user)
+
     def setUp(self):
         super().setUp()
-        self.c.force_login(self.test_user)
+        self.client.force_login(self.test_user)
         assert LatexImage.objects.all().count() == 0
 
     @staticmethod

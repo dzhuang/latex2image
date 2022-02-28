@@ -33,7 +33,7 @@ from hashlib import md5
 
 from django.core.management.base import CommandError
 from django.utils.encoding import DEFAULT_LOCALE_ENCODING
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from wand.image import Image as wand_image
 
 from latex.utils import (CriticalCheckMessage, file_read, file_write,

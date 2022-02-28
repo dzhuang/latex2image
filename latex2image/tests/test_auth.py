@@ -34,18 +34,18 @@ from tests.base_test_mixins import L2ITestMixinBase
 class LoginFormTest(L2ITestMixinBase, TestCase):
     def test_login_form_anonymous(self):
         with self.temporarily_switch_to_user(None):
-            resp = self.c.get(self.get_login_view_url())
+            resp = self.client.get(self.get_login_view_url())
             self.assertEqual(resp.status_code, 200)
 
     def test_login_form(self):
-        resp = self.c.get(self.get_login_view_url())
+        resp = self.client.get(self.get_login_view_url())
         self.assertEqual(resp.status_code, 200)
 
 
 class UerProfileTest(L2ITestMixinBase, TestCase):
     def test_non_auth_get(self):
         with self.temporarily_switch_to_user(None):
-            resp = self.c.get(self.get_profile_view_url())
+            resp = self.client.get(self.get_profile_view_url())
         self.assertEqual(resp.status_code, 302)
         expected_redirect_url = (
             self.concatenate_redirect_url(
@@ -55,7 +55,7 @@ class UerProfileTest(L2ITestMixinBase, TestCase):
 
     def test_auth_get(self):
         with self.temporarily_switch_to_user(self.test_user):
-            resp = self.c.get(self.get_profile_view_url())
+            resp = self.client.get(self.get_profile_view_url())
         self.assertEqual(resp.status_code, 200)
 
     def test_auth_post(self):
@@ -66,7 +66,7 @@ class UerProfileTest(L2ITestMixinBase, TestCase):
 
         # No "submit" in post
         with self.temporarily_switch_to_user(self.test_user):
-            resp = self.c.post(self.get_profile_view_url(), data=data)
+            resp = self.client.post(self.get_profile_view_url(), data=data)
         self.assertEqual(resp.status_code, 200)
 
         self.assertNotEqual(
@@ -98,5 +98,5 @@ class UerProfileTest(L2ITestMixinBase, TestCase):
         Token.objects.filter(user=temp_user).delete()
 
         with self.temporarily_switch_to_user(temp_user):
-            resp = self.c.get(self.get_profile_view_url())
+            resp = self.client.get(self.get_profile_view_url())
         self.assertEqual(resp.status_code, 200)

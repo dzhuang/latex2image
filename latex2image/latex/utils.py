@@ -32,7 +32,7 @@ from codemirror import CodeMirrorJavascript, CodeMirrorTextarea
 from django.core.checks import Critical
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import CommandError
-from django.utils.encoding import DEFAULT_LOCALE_ENCODING, force_text
+from django.utils.encoding import DEFAULT_LOCALE_ENCODING, force_str
 from django.utils.text import format_lazy
 
 # {{{ Constants
@@ -81,9 +81,9 @@ def popen_wrapper(args, os_err_exc_type=CommandError,
 
     output, errors = p.communicate()
     return (
-        force_text(output, stdout_encoding, strings_only=True,
+        force_str(output, stdout_encoding, strings_only=True,
                    errors='strict'),
-        force_text(errors, DEFAULT_LOCALE_ENCODING,
+        force_str(errors, DEFAULT_LOCALE_ENCODING,
                    strings_only=True, errors='replace'),
         p.returncode
     )
