@@ -224,7 +224,6 @@ L2I_CACHE_MAX_BYTES = 65536
 
 # L2I_CACHE_DATA_URL_ON_SAVE = False
 
-
 # {{{ Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
@@ -315,7 +314,6 @@ STATIC_URL = '/static/'
 
 CRISPY_TEMPLATE_PACK = "bootstrap3"
 
-
 # {{{ override this if you are using, for example, s3 storage
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR + "/"
@@ -323,7 +321,6 @@ MEDIA_ROOT = BASE_DIR + "/"
 # DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 
 # }}}
-
 
 if local_settings is not None:
     for name, val in local_settings.items():
