@@ -25,12 +25,11 @@ on:
 
 jobs:
   pytest:
-    name: Python ${{ matrix.python-version }} / Django ${{ matrix.django-version }}
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.9]
-        django-version: ["~=3.2.10", "~=3.2.11", "~=3.2.12"]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
@@ -52,7 +51,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install Django${{ matrix.django-version }}
           pip install -r tests/requirements_test.txt
           npm install
       - name: Install OS dependencies
@@ -77,7 +75,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
-          name: ${{ matrix.python-version }} / Django ${{ matrix.django-version }}
+          name: ${{ matrix.python-version }}
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true
