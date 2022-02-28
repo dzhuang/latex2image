@@ -91,10 +91,10 @@ jobs:
 
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-base:latest -f Dockerfile.base . || exit 1
 
-          if [[ "$EXTRA_FONTS" ]]
+          if [[ ${{ secrets.EXTRA_FONTS }} ]]
           then
             echo "----Installing user customized fonts.----"
-            wget "$EXTRA_FONTS" -O fonts.tar.gz -q
+            wget ${{ secrets.EXTRA_FONTS }} -O fonts.tar.gz -q
             tar -zxf fonts.tar.gz -C ./extra_fonts
             rm fonts.tar.gz
           else
