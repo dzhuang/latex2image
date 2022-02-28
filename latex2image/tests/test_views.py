@@ -27,7 +27,7 @@ import os
 from unittest import mock
 
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, Client
+from django.test import Client, TestCase
 from tests import factories
 from tests.base_test_mixins import (L2ITestMixinBase, get_fake_data_url,
                                     get_latex_file_dir,

@@ -24,16 +24,15 @@ THE SOFTWARE.
 
 import sys
 import tempfile
-from functools import wraps
+from functools import partial, wraps
 from io import StringIO
+from types import MethodType
 from unittest import mock
 from urllib.parse import quote
-from types import MethodType
-from functools import partial
 
 from django.contrib.auth import REDIRECT_FIELD_NAME, get_user_model
 from django.core.exceptions import ImproperlyConfigured
-from django.test import Client, override_settings
+from django.test import override_settings
 from django.urls import reverse
 
 CREATE_SUPERUSER_KWARGS = {
