@@ -1,11 +1,11 @@
-django<3
+django<4
 
 # ImageField
 Pillow
 
 # Django and MongoDB database connector 
 djongo
-pymongo==3.7.2
+pymongo
 sqlparse==0.2.4  # this is required by django 1.3.2
 
 # For ImageMagick
