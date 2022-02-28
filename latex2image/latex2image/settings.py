@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+import sys
 
 from django.conf.global_settings import STATICFILES_FINDERS
 
@@ -139,7 +140,14 @@ WSGI_APPLICATION = 'latex2image.wsgi.application'
 
 # https://github.com/nesdis/djongo/issues/390#issuecomment-640847108
 
-db_name = os.environ.get("L2I_MONGO_DB_NAME", 'latex2image'),
+db_name = os.environ.get("L2I_MONGO_DB_NAME", 'latex2image')
+
+# For Mac as the host, set "-e L2I_MONGODB_PORT=docker.for.mac.host.internal"
+# https://stackoverflow.com/a/45002996/3437454
+db_host = os.environ.get("L2I_MONGODB_HOST", "host.docker.internal")
+db_port = os.environ.get("L2I_MONGODB_PORT", 27017)
+db_user_name = os.environ.get("L2I_MONGODB_USERNAME", 'l2i_user')
+db_user_password = os.environ.get("L2I_MONGODB_PASSWORD", 'l2i_password')
 
 DATABASES = {
     'default': {
@@ -155,36 +163,16 @@ DATABASES = {
                 }
             },
         },
-        # 'CLIENT': {
-        #     'host': 'host-name or ip address',
-        #     'port': 27017,
-        #     'username': 'db-username',
-        #     'password': 'password',
-        #     'authSource': 'db-name',
-        #     'authMechanism': 'SCRAM-SHA-1'
-        # }
+        'CLIENT': {
+            'host': db_host,
+            'port': db_port,
+            'username': db_user_name,
+            'password': db_user_password,
+            'authSource': db_name,
+            'authMechanism': 'SCRAM-SHA-1'
+        }
     }
 }
-
-client = {}
-
-# For Mac as the host, set "-e L2I_MONGODB_PORT=docker.for.mac.host.internal"
-# https://stackoverflow.com/a/45002996/3437454
-mongo_host = os.environ.get("L2I_MONGODB_HOST", "host.docker.internal")
-if mongo_host:
-    client["host"] = mongo_host
-mongo_port = os.environ.get("L2I_MONGODB_PORT", None)
-if mongo_port:
-    client.setdefault("host", "localhost")
-    client["port"] = mongo_port
-mongo_user = os.environ.get("L2I_MONGODB_USERNAME", None)
-mongo_pwd = os.environ.get("L2I_MONGODB_PASSWORD", None)
-if mongo_user and mongo_pwd:
-    client["username"] = mongo_user
-    client["password"] = mongo_pwd
-
-if client and DATABASES["default"]["ENGINE"] == "djongo":
-    DATABASES["default"]["CLIENT"] = client
 
 
 # Execute the following in mongo cmdline:
@@ -199,10 +187,15 @@ if client and DATABASES["default"]["ENGINE"] == "djongo":
 
 # L2I_IMAGEMAGICK_PNG_RESOLUTION = 96
 
+redis_location = os.getenv('L2I_REDIS_LOCATION', None)
+redis_cache_location = (
+    f"{redis_location}/0" if redis_location
+    else "redis://host.docker.internal:6379/0")
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': '127.0.0.1:11211',
+        'LOCATION': redis_cache_location,
     }
 }
 
@@ -264,10 +257,10 @@ CORS_URLS_REGEX = r'^/api/.*$'
 # startswith L2I_CORS_ORIGIN_WHITELIST
 # e.g., L2I_CORS_ORIGIN_WHITELIST_LOCAL = "http://192.168.50.1"
 custom_whitelist_items = [
-    item for item in list(dict(os.environ).keys())
+    value for item, value in list(dict(os.environ).items())
     if item.startswith("L2I_CORS_ORIGIN_WHITELIST")]
 
-if custom_whitelist_items:
+if custom_whitelist_items:  # pragma: no cover
     CORS_ORIGIN_WHITELIST = CORS_ORIGIN_WHITELIST + tuple(custom_whitelist_items)
 
 # }}}
@@ -321,6 +314,12 @@ MEDIA_ROOT = BASE_DIR + "/"
 # DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 
 # }}}
+
+if sys.platform.lower().startswith("win"):  # pragma: no cover
+    STATIC_ROOT = BASE_DIR / "static"
+else:  # pragma: no cover
+    # the npm static file installed to
+    NPM_ROOT_PATH = "/srv"
 
 if local_settings is not None:
     for name, val in local_settings.items():
