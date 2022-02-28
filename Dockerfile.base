@@ -1,33 +1,50 @@
 FROM python:3.9-slim-buster
 MAINTAINER Dong Zhuang <dzhuang.scut@gmail.com>
 
-COPY ["latex2image", "texlive_apt.list", "/opt/latex2image/"]
+ARG USERNAME=l2i_user
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+ARG apt_list_file_name=texlive_apt.list
+
+COPY ["latex2image", "${apt_list_file_name}", "/tmp/latex2image/"]
 COPY extra_fonts /usr/share/fonts/extra_fonts
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends -qq nginx imagemagick curl git memcached $(awk '{print $1'} /opt/latex2image/texlive_apt.list) \
+WORKDIR /tmp/latex2image/
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends -qq sudo nginx imagemagick curl git memcached $(awk '{print $1'} /tmp/latex2image/${apt_list_file_name}) \
     && apt-get autoremove -y \
     && apt-get clean \
+    # allow the user to call sudo
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME \
     && rm -rf /var/lib/apt/lists/* \
+    # add 'daemon off;' to nginx and replace www-data to the new user
+    && echo "daemon off;" >> /etc/nginx/nginx.conf \
+    && sed  -i 's/www-data/'$USERNAME'/g' /etc/nginx/nginx.conf \
     && yes | rm /etc/ImageMagick*/policy.xml \
-    && fc-cache -f
+    && fc-cache -f \
+    && echo "daemon off;" >> /etc/nginx/nginx.conf \
+    && sed  -i 's/www-data/'$USERNAME'/g' /etc/nginx/nginx.conf \
+    && mkdir -p /srv/www/static \
+    && mkdir -p /srv/node_modules \
+    && chown -R $USER_GID:$USER_UID /tmp/latex2image \
+    && chown -R $USER_GID:$USER_UID /srv/www/static \
+    && chown -R $USER_GID:$USER_UID /srv/node_modules \
+    && cp -r /tmp/latex2image/node_modules /srv \
+    && ln -sf /dev/stdout /var/log/nginx/access.log \
+    && ln -sf /dev/stderr /var/log/nginx/error.log
+
+ENV PATH="${PATH}:/home/$USERNAME/.local/bin"
 
 COPY nginx.default /etc/nginx/sites-available/default
-WORKDIR /opt/latex2image/
-RUN ln -sf /dev/stdout /var/log/nginx/access.log \
-    && ln -sf /dev/stderr /var/log/nginx/error.log \
+
+USER $USERNAME
+
+RUN /usr/local/bin/python -m pip install --upgrade pip --no-cache-dir \
     && echo gunicorn >> requirements.txt \
     && pip install --no-cache-dir -r requirements.txt \
-    && mkdir -p /opt/latex2image/tmp \
-    && chown -R www-data:www-data /opt/latex2image
-
-VOLUME /opt/latex2image/local_settings
-
-# Fix lualatex https://github.com/overleaf/overleaf/pull/739/files
-ENV TEXMFVAR=/opt/latex2image/tmp
-
-EXPOSE 8020
-
-# Start server
-STOPSIGNAL SIGTERM
-CMD ["/opt/latex2image/start-server.sh"]
+    && python manage.py collectstatic \
+    && sudo rm -r /tmp/*

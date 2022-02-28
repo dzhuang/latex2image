@@ -1,0 +1,139 @@
+name: Build
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '!**.png'
+      - '!**.jpg'
+      - '!**.jpeg'
+      - '!**.md'
+      - '!**.rst'
+      - '!**.ipynb'
+      - '!docker-compose-example.yml'
+      - 'latex2image/**'
+      - '!latex2image/tests/**'
+      - 'Dockerfile.base'
+      - 'Dockerfile'
+  pull_request:
+    paths:
+      - '!**.png'
+      - '!**.jpg'
+      - '!**.jpeg'
+      - '!**.md'
+      - '!**.rst'
+      - '!**.ipynb'
+      - '!docker-compose-example.yml'
+      - 'latex2image/**'
+      - '!latex2image/tests/**'
+      - 'Dockerfile.base'
+      - 'Dockerfile'
+
+  workflow_run:
+    workflows: ["Run Tests"]
+    types: [completed]
+    branches: [main]
+    paths:
+      - '!**.md'
+      - '!**.ipynb'
+      - '!docker-compose-example.yml'
+      - 'latex2image/**'
+      - '!latex2image/tests/**'
+      - 'Dockerfile.base'
+      - 'Dockerfile'
+
+jobs:
+  build:
+    name: Build docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - name: Git branch name
+        id: git-branch-name
+        uses: EthanSK/git-branch-name-action@v1
+
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.9
+
+      - name: Only proceed if specified workflows succeeded
+        uses: ahmadnassri/action-workflow-run-wait@v1
+
+      - name: Get specific changed files
+        id: changed-files-specific
+        uses: tj-actions/changed-files@v10.1
+        with:
+          files: |
+            latex2image/requirements.txt
+            Dockerfile.base
+            nginx.default
+            package.json
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: If any of the listed files above change, build base image
+        if: steps.changed-files-specific.outputs.any_changed == 'true'
+        run: |
+          cd latex2image
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          npm install
+          cd ..
+
+          mkdir -p extra_fonts
+
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-base:latest -f Dockerfile.base . || exit 1
+
+          if [[ "$EXTRA_FONTS" ]]
+          then
+            echo "----Installing user customized fonts.----"
+            wget "$EXTRA_FONTS" -O fonts.tar.gz -q
+            tar -zxf fonts.tar.gz -C ./extra_fonts
+            rm fonts.tar.gz
+          else
+            echo "----No user customized fonts.----"
+          fi
+
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-zhhans-base:latest -f Dockerfile.base . --build-arg apt_list_file_name="texlive_apt_zh.list" || exit 1
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          build-args: |
+            base: ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-base:latest
+          push: false
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/latex2image:latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          build-args: |
+            base: ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-zhhans-base:latest
+          push: false
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-zhhans:latest
+
+      - name: Push new base image
+        if: steps.changed-files-specific.outputs.any_changed == 'true'
+        run: |
+          if [ ${{ env.GIT_BRANCH_NAME }} == 'main' ]
+          then
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-base:latest
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-zhhans-base:latest
+          fi
+
+      - name: Push new image
+        run: |
+          if [ ${{ env.GIT_BRANCH_NAME }} == 'main' ]
+          then
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/latex2image:latest
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-zhhans:latest
+          fi
