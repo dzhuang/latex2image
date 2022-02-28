@@ -28,6 +28,8 @@ from functools import wraps
 from io import StringIO
 from unittest import mock
 from urllib.parse import quote
+from types import MethodType
+from functools import partial
 
 from django.contrib.auth import REDIRECT_FIELD_NAME, get_user_model
 from django.core.exceptions import ImproperlyConfigured
@@ -40,6 +42,59 @@ CREATE_SUPERUSER_KWARGS = {
     "email": "test_admin@example.com",
     "first_name": "Test",
     "last_name": "Admin"}
+
+
+class classmethod_with_client:  # noqa: N801
+    """This acts like Python's built-in ``classmethod``, with one change:
+    When called on an instance (i.e. not a class), it automatically supplies
+    ``self.client`` as the first argument.
+    .. note::
+        This isn't immensely logical, but it helped avoid an expensive
+        refactor of the test code to explicitly always pass the client.
+        (The prior state was much worse: a class-global client was being
+        used. Almost fortunately, this Django 3.2 broke this usage.)
+    """
+
+    def __init__(self, f):
+        self.f = f
+
+    def __get__(self, obj, cls=None):
+        if obj is None:
+            return MethodType(self.f, cls)
+        else:
+            return partial(MethodType(self.f, type(obj)), obj.client)
+
+
+class _ClientUserSwitcher:
+    def __init__(self, client, logged_in_user, switch_to):
+        self.client = client
+        self.logged_in_user = logged_in_user
+        self.switch_to = switch_to
+
+    def __enter__(self):
+        if self.logged_in_user == self.switch_to:
+            return
+        if self.switch_to is None:
+            self.client.logout()
+            return
+        self.client.force_login(self.switch_to)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.logged_in_user == self.switch_to:
+            return
+        if self.logged_in_user is None:
+            self.client.logout()
+            return
+        self.client.force_login(self.logged_in_user)
+
+    def __call__(self, func):
+        from functools import wraps
+
+        @wraps(func)
+        def wrapper(*args, **kw):
+            with self:
+                return func(*args, **kw)
+        return wrapper
 
 
 class ResponseContextMixin(object):
@@ -123,7 +178,6 @@ class SuperuserCreateMixin(ResponseContextMixin):
         # Create superuser, without this, we cannot
         # create user, course and participation.
         cls.superuser = cls.create_superuser()
-        cls.c = Client()
         super().setUpTestData()
 
     @classmethod
@@ -139,13 +193,13 @@ class SuperuserCreateMixin(ResponseContextMixin):
     def get_sign_up_view_url(cls):
         return reverse("sign_up")
 
-    @classmethod
-    def get_sign_up(cls, follow=True):
-        return cls.c.get(cls.get_sign_up_view_url(), follow=follow)
+    @classmethod_with_client
+    def get_sign_up(cls, client, follow=True):
+        return client.get(cls.get_sign_up_view_url(), follow=follow)
 
-    @classmethod
-    def post_sign_up(cls, data, follow=True):
-        return cls.c.post(cls.get_sign_up_view_url(), data, follow=follow)
+    @classmethod_with_client
+    def post_sign_up(cls, client, data, follow=True):
+        return client.post(cls.get_sign_up_view_url(), data, follow=follow)
 
     @classmethod
     def get_profile_view_url(cls):
@@ -155,26 +209,26 @@ class SuperuserCreateMixin(ResponseContextMixin):
     def get_latex_form_view_url(cls):
         return reverse("home")
 
-    @classmethod
-    def get_latex_form_view(cls, follow=True):
-        return cls.c.get(cls.get_latex_form_view_url(), follow=follow)
+    @classmethod_with_client
+    def get_latex_form_view(cls, client, follow=True):
+        return client.get(cls.get_latex_form_view_url(), follow=follow)
 
-    @classmethod
-    def post_latex_form_view(cls, data, follow=True):
-        return cls.c.post(cls.get_latex_form_view_url(), data=data, follow=follow)
+    @classmethod_with_client
+    def post_latex_form_view(cls, client, data, follow=True):
+        return client.post(cls.get_latex_form_view_url(), data=data, follow=follow)
 
-    @classmethod
-    def get_profile(cls, follow=True):
-        return cls.c.get(cls.get_profile_view_url(), follow=follow)
+    @classmethod_with_client
+    def get_profile(cls, client, follow=True):
+        return client.get(cls.get_profile_view_url(), follow=follow)
 
-    @classmethod
-    def post_profile(cls, data, follow=True):
+    @classmethod_with_client
+    def post_profile(cls, client, data, follow=True):
         data.update({"submit": [""]})
-        return cls.c.post(cls.get_profile_view_url(), data, follow=follow)
+        return client.post(cls.get_profile_view_url(), data, follow=follow)
 
-    @classmethod
-    def post_signout(cls, data, follow=True):
-        return cls.c.post(cls.get_sign_up_view_url(), data, follow=follow)
+    @classmethod_with_client
+    def post_signout(cls, client, data, follow=True):
+        return client.post(cls.get_sign_up_view_url(), data, follow=follow)
 
     @classmethod
     def get_reset_password_url(cls):
@@ -297,10 +351,10 @@ class L2ITestMixinBase(SuperuserCreateMixin):
             user.save()
         return user
 
-    @classmethod
-    def get_logged_in_user(cls):
+    @classmethod_with_client
+    def get_logged_in_user(cls, client):
         try:
-            logged_in_user_id = cls.c.session['_auth_user_id']
+            logged_in_user_id = client.session['_auth_user_id']
             from django.contrib.auth import get_user_model
             logged_in_user = get_user_model().objects.get(
                 pk=int(logged_in_user_id))
@@ -308,41 +362,10 @@ class L2ITestMixinBase(SuperuserCreateMixin):
             logged_in_user = None
         return logged_in_user
 
-    @classmethod
-    def temporarily_switch_to_user(cls, switch_to):
-
-        from functools import wraps
-
-        class ClientUserSwitcher(object):
-            def __init__(self, switch_to):
-                self.client = cls.c
-                self.switch_to = switch_to
-                self.logged_in_user = cls.get_logged_in_user()
-
-            def __enter__(self):
-                if self.logged_in_user == self.switch_to:
-                    return
-                if self.switch_to is None:
-                    self.client.logout()
-                    return
-                self.client.force_login(self.switch_to)
-
-            def __exit__(self, exc_type, exc_val, exc_tb):
-                if self.logged_in_user == self.switch_to:
-                    return
-                if self.logged_in_user is None:
-                    self.client.logout()
-                    return
-                self.client.force_login(self.logged_in_user)
-
-            def __call__(self, func):
-                @wraps(func)
-                def wrapper(*args, **kw):
-                    with self:
-                        return func(*args, **kw)
-                return wrapper
-
-        return ClientUserSwitcher(switch_to)
+    @classmethod_with_client
+    def temporarily_switch_to_user(cls, client, switch_to):  # noqa: N805
+        return _ClientUserSwitcher(
+                client, cls.get_logged_in_user(client), switch_to)
 
 
 def get_latex_file_dir(folder_name):

@@ -19,7 +19,7 @@ class AdminTest(L2ITestMixinBase, TestCase):
         self.n_errors = randint(5, 10)
         self.error_instances = (
             factories.LatexImageErrorFactory.create_batch(size=self.n_errors))
-        self.c.force_login(self.superuser)
+        self.client.force_login(self.superuser)
 
     @classmethod
     def get_admin_change_list_view_url(cls, app_name, model_name):
@@ -103,26 +103,26 @@ class AdminTest(L2ITestMixinBase, TestCase):
             app_name="latex", model_name=model_name.lower(), args=args)
 
     def test_list_view(self):
-        resp = self.c.get(self.get_admin_l2i_change_list_view_url())
+        resp = self.client.get(self.get_admin_l2i_change_list_view_url())
         self.assertEqual(resp.status_code, 200)
 
     def test_list_view_when_image_file_deleted(self):
         import os
         os.remove(self.images[0].image.path)
-        resp = self.c.get(self.get_admin_l2i_change_list_view_url())
+        resp = self.client.get(self.get_admin_l2i_change_list_view_url())
         self.assertEqual(resp.status_code, 200)
 
     def test_add_view(self):
-        resp = self.c.get(self.get_admin_l2i_add_view_url())
+        resp = self.client.get(self.get_admin_l2i_add_view_url())
         self.assertEqual(resp.status_code, 200)
 
     def test_change_view(self):
-        resp = self.c.get(
+        resp = self.client.get(
             self.get_admin_l2i_change_view_url(
                 args=[self.images[0].pk]))
         self.assertEqual(resp.status_code, 200)
 
-        resp = self.c.get(
+        resp = self.client.get(
             self.get_admin_l2i_change_view_url(
                 args=[self.error_instances[0].pk]))
         self.assertEqual(resp.status_code, 200)
@@ -131,7 +131,7 @@ class AdminTest(L2ITestMixinBase, TestCase):
         import os
         pk = self.images[0].pk
         os.remove(self.images[0].image.path)
-        resp = self.c.get(
+        resp = self.client.get(
             self.get_admin_l2i_change_view_url(
                 args=[pk]))
         self.assertEqual(resp.status_code, 200)
