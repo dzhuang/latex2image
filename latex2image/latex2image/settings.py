@@ -80,8 +80,8 @@ STATIC_ROOT = "/srv/www/static"
 STATICFILES_FINDERS += ("npm.finders.NpmFinder",)
 
 STATICFILES_DIRS = (
-        os.path.join(BASE_DIR, "latex2image", "static"),
-        )
+    os.path.join(BASE_DIR, "latex2image", "static"),
+)
 
 
 # Default primary key field type
@@ -200,8 +200,13 @@ redis_cache_location = (
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'LOCATION': redis_cache_location,
+        "BACKEND": "django_redis.cache.RedisCache",
+        'LOCATION': [redis_cache_location],
+        "TIMEOUT": None,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "IGNORE_EXCEPTIONS": True,
+        }
     }
 }
 
@@ -304,12 +309,6 @@ LOCALE_PATHS = (
 
 LOGIN_URL = "/login/"
 
-# {{{ Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/2.2/howto/static-files/
-
-STATIC_URL = '/static/'
-
-# }}}
 
 CRISPY_TEMPLATE_PACK = "bootstrap3"
 
@@ -322,7 +321,7 @@ MEDIA_ROOT = BASE_DIR + "/"
 # }}}
 
 if sys.platform.lower().startswith("win"):  # pragma: no cover
-    STATIC_ROOT = BASE_DIR / "static"
+    STATIC_ROOT = BASE_DIR + "/static"
 else:  # pragma: no cover
     # the npm static file installed to
     NPM_ROOT_PATH = "/srv"

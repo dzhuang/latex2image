@@ -21,11 +21,11 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME \
     && rm -rf /var/lib/apt/lists/* \
+    && yes | rm /etc/ImageMagick*/policy.xml \
+    && fc-cache -f \
     # add 'daemon off;' to nginx and replace www-data to the new user
     && echo "daemon off;" >> /etc/nginx/nginx.conf \
     && sed  -i 's/www-data/'$USERNAME'/g' /etc/nginx/nginx.conf \
-    && yes | rm /etc/ImageMagick*/policy.xml \
-    && fc-cache -f \
     && mkdir -p /srv/www/static \
     && mkdir -p /srv/node_modules \
     && chown -R $USER_GID:$USER_UID /tmp/latex2image \
