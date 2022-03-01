@@ -75,7 +75,7 @@ if custom_allowed_hosts:
 
 STATIC_URL = '/static/'
 
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STATIC_ROOT = "/srv/www/static"
 
 STATICFILES_FINDERS += ("npm.finders.NpmFinder",)
 
