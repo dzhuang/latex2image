@@ -35,6 +35,8 @@ from django.utils.html import mark_safe
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 
+UPLOAD_TO = "l2i_images"
+
 
 def convert_data_url_to_image_obj(data_url):
     from binascii import a2b_base64
@@ -68,7 +70,7 @@ class LatexImage(models.Model):
     creation_time = models.DateTimeField(
         blank=False, default=now, verbose_name=_('Creation time'))
     image = models.ImageField(
-        null=True, blank=True, upload_to="l2i_images", storage=OverwriteStorage())
+        null=True, blank=True, upload_to=UPLOAD_TO, storage=OverwriteStorage())
     data_url = models.TextField(null=True, blank=True, verbose_name=_('Data Url'))
     compile_error = models.TextField(
         null=True, blank=True, verbose_name=_('Compile Error'))
