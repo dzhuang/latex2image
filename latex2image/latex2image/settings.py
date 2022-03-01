@@ -84,6 +84,12 @@ STATICFILES_DIRS = (
         )
 
 
+# Default primary key field type
+# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -145,7 +151,7 @@ db_name = os.environ.get("L2I_MONGO_DB_NAME", 'latex2image')
 # For Mac as the host, set "-e L2I_MONGODB_PORT=docker.for.mac.host.internal"
 # https://stackoverflow.com/a/45002996/3437454
 db_host = os.environ.get("L2I_MONGODB_HOST", "host.docker.internal")
-db_port = os.environ.get("L2I_MONGODB_PORT", 27017)
+db_port = int(os.environ.get("L2I_MONGODB_PORT", 27017))
 db_user_name = os.environ.get("L2I_MONGODB_USERNAME", 'l2i_user')
 db_user_password = os.environ.get("L2I_MONGODB_PASSWORD", 'l2i_password')
 
