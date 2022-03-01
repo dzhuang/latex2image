@@ -12,7 +12,7 @@ sqlparse
 wand
 
 # For mypy (static type checking) support
-typing>=3.6.1
+typing
 
 # django forms
 django-crispy-forms
@@ -24,14 +24,10 @@ djangorestframework
 django-cors-headers
 
 # codemirror
-django-codemirror-widget>=0.5
+django-codemirror-widget
 
 # For web dependencies
 django-npm
 
 # For cache
-python-memcached
 django-redis
-
-# For web storage
-django-s3-storage
