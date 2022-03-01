@@ -26,8 +26,6 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && sed  -i 's/www-data/'$USERNAME'/g' /etc/nginx/nginx.conf \
     && yes | rm /etc/ImageMagick*/policy.xml \
     && fc-cache -f \
-    && echo "daemon off;" >> /etc/nginx/nginx.conf \
-    && sed  -i 's/www-data/'$USERNAME'/g' /etc/nginx/nginx.conf \
     && mkdir -p /srv/www/static \
     && mkdir -p /srv/node_modules \
     && chown -R $USER_GID:$USER_UID /tmp/latex2image \
