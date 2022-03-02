@@ -65,7 +65,7 @@ ALLOWED_HOSTS = ("127.0.0.1",)
 # e.g., L2I_ALLOWED_HOSTS_CAT = "http://example.com"
 custom_allowed_hosts = [
     value for item, value in list(dict(os.environ).items())
-    if item.startswith("L2I_ALLOWED_HOST")]
+    if item.startswith("L2I_ALLOWED_HOST_")]
 
 if custom_allowed_hosts:
     ALLOWED_HOSTS = ALLOWED_HOSTS + tuple(custom_allowed_hosts)
@@ -210,7 +210,7 @@ CACHES = {
     }
 }
 
-L2I_CACHE_MAX_BYTES = 65536
+L2I_CACHE_MAX_BYTES = int(os.getenv("L2I_CACHE_MAX_BYTES", 65536))
 
 # L2I_API_IMAGE_RETURNS_RELATIVE_PATH: Default to True. If False, api query
 # only image will return the url of the file according to the MEDIA_URL and
@@ -219,7 +219,16 @@ L2I_CACHE_MAX_BYTES = 65536
 # in create and detail view. If False, changes to MEDIA_URL will require a
 # flush of cache.
 
-# L2I_API_IMAGE_RETURNS_RELATIVE_PATH = True
+api_image_returns_relative_path = os.getenv(
+    "L2I_API_IMAGE_RETURNS_RELATIVE_PATH", None)
+
+if api_image_returns_relative_path is not None:
+    assert api_image_returns_relative_path in ["True", "False", True]
+else:
+    api_image_returns_relative_path = True
+
+L2I_API_IMAGE_RETURNS_RELATIVE_PATH = (
+        api_image_returns_relative_path == "True")
 
 
 # L2I_CACHE_DATA_URL_ON_SAVE: Default to False. Whether add the data url
@@ -227,6 +236,10 @@ L2I_CACHE_MAX_BYTES = 65536
 # on save, while data url can be large in size.
 
 # L2I_CACHE_DATA_URL_ON_SAVE = False
+
+L2I_CACHE_DATA_URL_ON_SAVE = os.getenv('L2I_REDIS_LOCATION', None) == "True"
+
+L2I_KEY_VERSION = os.getenv("L2I_KEY_VERSION", 1)
 
 
 # L2I_USE_EXIST_STORAGE_IMAGE_IF_EXIST: Default to False. If an / all instance(s)
@@ -236,13 +249,14 @@ L2I_CACHE_MAX_BYTES = 65536
 # This is important when we were serving images on cloud
 # storages like s3 while the database were destroyed. In this way, we don't need to
 # regenerate and upload the image(s).
-L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE = False
+L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE = (
+    os.getenv("L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE", None) == "True")
 
 
 # {{{ Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
-if os.environ.get("L2I_ENABLE_PASSWORD_VALIDATORS", False):
+if os.environ.get("L2I_ENABLE_PASSWORD_VALIDATORS", False) == "True":
     AUTH_PASSWORD_VALIDATORS = [
         {
             'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',  # noqa
