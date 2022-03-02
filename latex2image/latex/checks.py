@@ -69,6 +69,19 @@ def settings_check(app_configs, **kwargs):
                     msg="if set, settings.L2I_IMAGEMAGICK_PNG_RESOLUTION "
                         "must be a positive int",
                     id="imagemagick_png_resolution.E001"))
+
+    use_existing_storage_image_to_create_instance = (
+        getattr(settings,
+                "L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE",
+                None))
+    if use_existing_storage_image_to_create_instance is not None:
+        if not isinstance(use_existing_storage_image_to_create_instance, bool):
+            errors.append(
+                CriticalCheckMessage(
+                    msg="if set, settings.L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE "  # noqa
+                        "must be a bool value",
+                    id="use_existing_storage_image_to_create_instance.E001"))
+
     return errors
 
 

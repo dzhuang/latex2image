@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import annotations, division
 
 __copyright__ = "Copyright (C) 2020 Dong Zhuang"
 
@@ -26,13 +26,14 @@ import sys
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.core.files.storage import default_storage
 from rest_framework import generics, permissions, status
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
 from latex.converter import LatexCompileError, tex_to_img_converter
-from latex.models import LatexImage
+from latex.models import UPLOAD_TO, LatexImage
 from latex.serializers import LatexImageSerializer
 
 
@@ -131,6 +132,11 @@ def get_cached_results_from_field_and_tex_key(tex_key, field_str, request):
 
 class CreateMixin:
     def create(self, request, *args, **kwargs):
+        use_existing_storage_image_to_create_instance = (
+            getattr(settings,
+                    "L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE",
+                    False))
+
         try:
             req_params = JSONParser().parse(request)
             compiler = req_params.pop("compiler")
@@ -138,6 +144,10 @@ class CreateMixin:
             image_format = req_params.pop("image_format")
             tex_key = req_params.pop("tex_key", None)
             field_str = req_params.pop("fields", None)
+            use_storage_file_if_exists = req_params.pop(
+                "use_storage_file_if_exists",
+                use_existing_storage_image_to_create_instance)
+
         except Exception:
             from traceback import print_exc
             print_exc()
@@ -161,7 +171,7 @@ class CreateMixin:
         try:
             _converter = tex_to_img_converter(
                 compiler, tex_source, image_format, tex_key, **req_params)
-        except Exception as e:
+        except Exception:
             from traceback import print_exc
             print_exc()
             tp, e, __ = sys.exc_info()
@@ -171,10 +181,26 @@ class CreateMixin:
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         qs = LatexImage.objects.filter(tex_key=_converter.tex_key)
+        instance = None
+
         if qs.count():
             instance = qs[0]
-            image_serializer = self.get_serializer(
-                instance, fields=field_str)
+        else:
+            if use_storage_file_if_exists:
+                # Set Django's FileField to an existing file
+                # https://stackoverflow.com/a/10906037/3437454
+                _path = "/".join(
+                    [UPLOAD_TO, ".".join([_converter.tex_key, image_format])])
+                if default_storage.exists(_path):
+                    instance = LatexImage(
+                        tex_key=_converter.tex_key,
+                        creator=self.request.user
+                    )
+                    instance.image.name = _path
+                    instance.save()
+
+        if instance:
+            image_serializer = self.get_serializer(instance, fields=field_str)
             return Response(
                 image_serializer.data, status=status.HTTP_200_OK)
 

@@ -28,7 +28,9 @@ import os
 from random import randint
 from unittest import mock
 
+from django.db.models import signals
 from django.test import TestCase, override_settings
+from factory.django import mute_signals
 from rest_framework.test import (APIClient, APIRequestFactory,
                                  force_authenticate)
 from tests import factories
@@ -391,6 +393,86 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
             format='json')
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(LatexImage.objects.all().count(), self.n_new + 1)
+
+    @override_settings(L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE=True)
+    def test_use_existing_storage_image_to_create_instance_success(self):
+        post_data = self.get_post_data()
+        self.api_client.post(self.get_creat_url(), data=post_data, format='json')
+        self.assertEqual(LatexImage.objects.all().count(), 1)
+
+        instance = LatexImage.objects.first()
+        tex_key = instance.tex_key
+
+        with mute_signals(signals.post_delete):
+            instance.delete()
+
+        self.assertEqual(LatexImage.objects.all().count(), 0)
+
+        with mock.patch(
+                "latex.converter.Tex2ImgBase.get_converted_data_url"
+        ) as mock_convert:
+
+            resp = self.api_client.post(
+                self.get_creat_url(), data=post_data, format='json')
+            self.assertEqual(resp.status_code, 200, resp.content.decode())
+            mock_convert.assert_not_called()
+
+        self.assertEqual(LatexImage.objects.all().count(), 1)
+        instance = LatexImage.objects.first()
+        self.assertEqual(instance.tex_key, tex_key)
+
+    @override_settings(L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE=False)
+    def test_use_existing_storage_image_to_create_instance_post_data(self):
+        # settings not enabled L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE
+        post_data = self.get_post_data()
+        self.api_client.post(self.get_creat_url(), data=post_data, format='json')
+        self.assertEqual(LatexImage.objects.all().count(), 1)
+
+        instance = LatexImage.objects.first()
+        tex_key = instance.tex_key
+
+        with mute_signals(signals.post_delete):
+            instance.delete()
+
+        self.assertEqual(LatexImage.objects.all().count(), 0)
+
+        with mock.patch(
+                "latex.converter.Tex2ImgBase.get_converted_data_url"
+        ) as mock_convert:
+
+            # post data enabled use_storage_file_if_exists
+            post_data = self.get_post_data(use_storage_file_if_exists=True)
+            resp = self.api_client.post(
+                self.get_creat_url(), data=post_data, format='json')
+            self.assertEqual(resp.status_code, 200, resp.content.decode())
+            mock_convert.assert_not_called()
+
+        self.assertEqual(LatexImage.objects.all().count(), 1)
+        instance = LatexImage.objects.first()
+        self.assertEqual(instance.tex_key, tex_key)
+
+    @override_settings(L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE=False)
+    def test_not_use_existing_storage_image_to_create_instance(self):
+        post_data = self.get_post_data()
+        self.api_client.post(self.get_creat_url(), data=post_data, format='json')
+        self.assertEqual(LatexImage.objects.all().count(), 1)
+
+        instance = LatexImage.objects.first()
+
+        with mute_signals(signals.post_delete):
+            instance.delete()
+
+        self.assertEqual(LatexImage.objects.all().count(), 0)
+
+        with mock.patch(
+                "latex.converter.Tex2ImgBase.get_converted_data_url"
+        ) as mock_convert:
+            mock_convert.return_value = "foo:bar"
+
+            with self.assertRaises(ValueError):
+                self.api_client.post(
+                    self.get_creat_url(), data=post_data, format='json')
+            mock_convert.assert_called_once()
 
     @suppress_stdout_decorator(suppress_stderr=True)
     def test_post_data_error_not_compile_error(self):

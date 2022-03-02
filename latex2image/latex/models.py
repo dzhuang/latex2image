@@ -23,17 +23,20 @@ THE SOFTWARE.
 """
 
 import io
+from mimetypes import guess_type
 from urllib.parse import urljoin
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.files.storage import get_storage_class
+from django.core.files.storage import default_storage, get_storage_class
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.validators import validate_slug
 from django.db import models
 from django.utils.html import mark_safe
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
+
+from latex.utils import get_data_url_from_buf_and_mimetype
 
 UPLOAD_TO = "l2i_images"
 
@@ -82,10 +85,44 @@ class LatexImage(models.Model):
         verbose_name = _("LaTeXImage")
         verbose_name_plural = _("LaTeXImages")
 
+    def _get_changed_fields(self):
+        # Get updated_fields: https://stackoverflow.com/a/55005137/3437454
+        # This method should only be used before saving.
+        if self.pk:
+            # If self.pk is not None then it's an update.
+            cls = self.__class__
+
+            # This will get the current model state since super().save()
+            # isn't called yet.
+            old = cls.objects.get(pk=self.pk)
+
+            # This gets the newly instantiated Mode object with the new values.
+            new = self
+            changed_fields = []
+            for field in cls._meta.get_fields():
+                field_name = field.name
+                try:
+                    if getattr(old, field_name) != getattr(new, field_name):
+                        changed_fields.append(field_name)
+                except Exception:
+                    # Catch field does not exist exception
+                    pass
+            return changed_fields
+        return []
+
     def save(self, **kwargs):
         # https://stackoverflow.com/a/18803218/3437454
-        if self.data_url:
+
+        changed_fields = self._get_changed_fields()
+
+        if (self.data_url and not self.image) or "data_url" in changed_fields:
             self.image = make_image_file(self.data_url, self.tex_key)
+
+        if self.image and not self.data_url:
+            file = default_storage.open(str(self.image))
+            self.data_url = get_data_url_from_buf_and_mimetype(
+                buf=file.read(), mime_type=guess_type(str(self.image))[0])
+            file.close()
 
         self.full_clean()
         return super().save(**kwargs)

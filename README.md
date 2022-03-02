@@ -56,6 +56,7 @@ The following short-handed settings can be configured in your `docker-compose.ym
 | L2I_CACHE_MAX_BYTES | The maximum size above which the attribute won't be cached. |
 | L2I_CACHE_DATA_URL_ON_SAVE | Whether cache the `data_url` attribute when a `LatexImage` object is saved. |
 | L2I_KEY_VERSION | A string which will be concatenated in the auto-generated `tex_key`, which is used as the identifier of the Tex source code. Default to 1. |
+| L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE | Default to False. If an / all instance(s) were deleted while the image(s) were not delete from the default storage, you can set the option to `True` to prevent re-compile / re-convert the image(s), and use the image(s) to recreate the instance when requested. This is important when we were serving images on cloud storages like s3 while the database were destroyed. In this way, we don't need to regenerate and upload the image(s).|
 | DJANGO_SUPERUSER_USERNAME | Superuser name created for the first run. String, no quote. |
 | DJANGO_SUPERUSER_PASSWORD | Superuser password created for the first run. String, no quote. |
 
@@ -85,6 +86,7 @@ in their `\profile` page. When requesting via APIs, you need to add a header `Au
   when `compiler` is `latex` while the source code contains `tikz` pictures, it will return `svg` images disregarding 
   the `image_format` param.
   - `tex_key`: Optional, a unique identifier, if not provide, it will be generated automatically. Notice that, the image generated will use that key as the base_name.
+  - `use_existing_storage_image_to_create_instance`: Optional, defaults to   
   - `fields`: Optional, a string with fields name concatenated by `,`. See below.
 
 - For `POST` requests, with a `fields` (e.g., {`fields`: `image,creator`}) in the post data, you'll get a result which don't display all the fields. When only on field is specified, the result will be cached.

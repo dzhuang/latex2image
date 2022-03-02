@@ -228,6 +228,17 @@ L2I_CACHE_MAX_BYTES = 65536
 
 # L2I_CACHE_DATA_URL_ON_SAVE = False
 
+
+# L2I_USE_EXIST_STORAGE_IMAGE_IF_EXIST: Default to False. If an / all instance(s)
+# were deleted while the image(s) were not delete from the default storage,
+# you can set the option to True to prevent re-compile / re-convert the image(s),
+# and use the image(s) to build the instances when requested.
+# This is important when we were serving images on cloud
+# storages like s3 while the database were destroyed. In this way, we don't need to
+# regenerate and upload the image(s).
+L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE = False
+
+
 # {{{ Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 

@@ -37,7 +37,9 @@ from django.utils.translation import gettext as _
 from wand.image import Image as wand_image
 
 from latex.utils import (CriticalCheckMessage, file_read, file_write,
-                         get_abstract_latex_log, popen_wrapper, string_concat)
+                         get_abstract_latex_log,
+                         get_data_url_from_buf_and_mimetype, popen_wrapper,
+                         string_concat)
 
 debug = False
 
@@ -405,11 +407,8 @@ def get_data_url(file_path):
     from mimetypes import guess_type
     mime_type = guess_type(file_path)[0]
 
-    from base64 import b64encode
-    return "data:%(mime_type)s;base64,%(b64)s" % {
-        "mime_type": mime_type,
-        "b64": b64encode(buf).decode(),
-    }
+    return get_data_url_from_buf_and_mimetype(buf, mime_type)
+
 
 # }}}
 
