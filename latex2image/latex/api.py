@@ -187,6 +187,8 @@ class CreateMixin:
             instance = qs[0]
         else:
             if use_storage_file_if_exists:
+                # Set Django's FileField to an existing file
+                # https://stackoverflow.com/a/10906037/3437454
                 _path = "/".join(
                     [UPLOAD_TO, ".".join([_converter.tex_key, image_format])])
                 if default_storage.exists(_path):
