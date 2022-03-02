@@ -31,3 +31,6 @@ django-npm
 
 # For cache
 django-redis
+
+# For web storage
+django-s3-storage
