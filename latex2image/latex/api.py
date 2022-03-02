@@ -132,6 +132,11 @@ def get_cached_results_from_field_and_tex_key(tex_key, field_str, request):
 
 class CreateMixin:
     def create(self, request, *args, **kwargs):
+        use_existing_storage_image_to_create_instance = (
+            getattr(settings,
+                    "L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE",
+                    False))
+
         try:
             req_params = JSONParser().parse(request)
             compiler = req_params.pop("compiler")
@@ -139,6 +144,10 @@ class CreateMixin:
             image_format = req_params.pop("image_format")
             tex_key = req_params.pop("tex_key", None)
             field_str = req_params.pop("fields", None)
+            use_storage_file_if_exists = req_params.pop(
+                "use_storage_file_if_exists",
+                use_existing_storage_image_to_create_instance)
+
         except Exception:
             from traceback import print_exc
             print_exc()
@@ -162,7 +171,7 @@ class CreateMixin:
         try:
             _converter = tex_to_img_converter(
                 compiler, tex_source, image_format, tex_key, **req_params)
-        except Exception as e:
+        except Exception:
             from traceback import print_exc
             print_exc()
             tp, e, __ = sys.exc_info()
@@ -177,15 +186,16 @@ class CreateMixin:
         if qs.count():
             instance = qs[0]
         else:
-            _path = "/".join(
-                [UPLOAD_TO, ".".join([_converter.tex_key, image_format])])
-            if default_storage.exists(_path):
-                instance = LatexImage(
-                    tex_key=_converter.tex_key,
-                    creator=self.request.user
-                )
-                instance.image.name = _path
-                instance.save()
+            if use_storage_file_if_exists:
+                _path = "/".join(
+                    [UPLOAD_TO, ".".join([_converter.tex_key, image_format])])
+                if default_storage.exists(_path):
+                    instance = LatexImage(
+                        tex_key=_converter.tex_key,
+                        creator=self.request.user
+                    )
+                    instance.image.name = _path
+                    instance.save()
 
         if instance:
             image_serializer = self.get_serializer(instance, fields=field_str)

@@ -141,6 +141,33 @@ class CheckCacheField(CheckL2ISettingsBase):
         self.assertCheckMessages([])
 
 
+class CheckUseExistingStorageImageToCreateInstance(CheckL2ISettingsBase):
+    # test L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE
+    msg_id_prefix = "use_existing_storage_image_to_create_instance"
+
+    @property
+    def func(self):
+        from latex.checks import settings_check
+        return settings_check
+
+    @override_settings(L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE=None)
+    def test_checks_none(self):
+        self.assertCheckMessages([])
+
+    @override_settings(L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE=1)
+    def test_checks_not_bool(self):
+        self.assertCheckMessages(
+            ['use_existing_storage_image_to_create_instance.E001'])
+
+    @override_settings(L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE=True)
+    def test_checks_ok(self):
+        self.assertCheckMessages([])
+
+    @override_settings(L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE=False)
+    def test_checks_ok2(self):
+        self.assertCheckMessages([])
+
+
 class CheckImageMagickPngResolution(CheckL2ISettingsBase):
     # test L2I_IMAGEMAGICK_PNG_RESOLUTION
     msg_id_prefix = "imagemagick_png_resolution"
