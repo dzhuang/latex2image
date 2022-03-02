@@ -1,22 +1,52 @@
-version: '2'
+version: '3'
+
 services:
-   latex2image:
-     image: dzhuang/latex2image
-     ports:
-       - "8020:8020"
-#     volumes:
-#       - path/to/your/local/dir:latex2image/local_settings
-     environment:
-       - L2I_SECRET_KEY=aldsjfgoiqo3jrjdfjipoj)lasdffjp98uqerljxbvjlk
-       - L2I_ALLOWED_HOST1=www.example.org
-       - L2I_ALLOWED_HOST2=www2.example.org
-#       - L2I_MONGODB_HOST=docker.example.org
-#       - L2I_MONGODB_USERNAME=me
-#       - L2I_MONGODB_PASSWORD=pass
-       - L2I_CORS_ORIGIN_WHITELIST_0=http://www.abcd.com
-       - L2I_CORS_ORIGIN_WHITELIST_0=http://www.cdef.com
-       - L2I_LANGUAGE_CODE=en-us
-#       - L2I_DEBUG=on
-       - DJANGO_SUPERUSER_USERNAME=me
-       - DJANGO_SUPERUSER_PASSWORD=passwd
-#       - DJANGO_SUPERUSER_EMAIL=myemail@example.com
+  latex2image_service:
+    image: dzhuang/latex2image-zhhans
+    ports:
+      - 8040:8020
+#    volumes:
+#       - ./latex2image/local_settings/:/opt/latex2image/local_settings/
+    environment:
+      # - L2I_SECRET_KEY=pclpourladjfoupuigjladfj2qyqewrozcoilqepouipoigpqeroilijapoiqer
+      # - L2I_LANGUAGE_CODE=zh-hans
+      # - L2I_TZ=Asia/Shanghai
+      - L2I_DEBUG=on
+      - L2I_MONGODB_HOST=mongodb://mongodb_service
+      - L2I_MONGODB_PORT=27017
+      - L2I_MONGODB_USERNAME=l2i_user
+      - L2I_MONGODB_PASSWORD=l2i_password
+      - L2I_MONGO_DB_NAME=latex2image
+      - L2I_REDIS_LOCATION=redis://redis_service:6379
+
+      - DJANGO_SUPERUSER_USERNAME=test_superuser
+      - DJANGO_SUPERUSER_PASSWORD=test_superpass
+      - DJANGO_SUPERUSER_EMAIL=blabal@example.com
+    depends_on:
+      - mongodb_service
+      - redis_service
+    restart: always
+
+  mongodb_service:
+    image: mongo:4
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=test_root
+      - MONGO_INITDB_ROOT_PASSWORD=test_root_password
+      - MONGO_INITDB_USERNAME=l2i_user
+      - MONGO_INITDB_DATABASE=latex2image
+      - MONGO_INITDB_PASSWORD=l2i_password
+    volumes:
+      - db_data:/data/db
+      - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+
+    restart: always
+
+  redis_service:
+    image: redis:alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
+  db_data:

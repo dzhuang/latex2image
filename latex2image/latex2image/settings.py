@@ -64,7 +64,7 @@ ALLOWED_HOSTS = ("127.0.0.1",)
 # startswith L2I_CORS_ALLOWED_HOST_ (with no ending 'S')
 # e.g., L2I_ALLOWED_HOSTS_CAT = "http://example.com"
 custom_allowed_hosts = [
-    item for item in list(dict(os.environ).keys())
+    value for item, value in list(dict(os.environ).items())
     if item.startswith("L2I_ALLOWED_HOST")]
 
 if custom_allowed_hosts:
@@ -256,7 +256,8 @@ LOGIN_REDIRECT_URL = 'home'
 # (not use the whitelist below). Defaults to False.
 # CORS_ORIGIN_WHITELIST: List of origins that are authorized to make
 # cross-site HTTP requests. Defaults to []
-CORS_ORIGIN_ALLOW_ALL = os.environ.get("L2I_CORS_ORIGIN_ALLOW_ALL", None) is None
+CORS_ORIGIN_ALLOW_ALL = os.environ.get("L2I_CORS_ORIGIN_ALLOW_ALL", None) == "true"
+
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:8020',
     'http://host.docker.internal:8020',
