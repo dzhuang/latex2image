@@ -7,8 +7,8 @@ def test_home():
     assert resp.history[0].status_code == 302
 
 
-def test_login():
-    url = "http://127.0.0.1:8040/login/"
+def test_login_redirect():
+    url = "http://127.0.0.1:8040/login/?next=/profile/"
     session = requests.Session()
     session.get(url)
 
