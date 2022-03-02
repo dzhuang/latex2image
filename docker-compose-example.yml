@@ -28,7 +28,7 @@ services:
     restart: always
 
   mongodb_service:
-    image: mongo:4
+    image: mongo:5
     environment:
       - MONGO_INITDB_ROOT_USERNAME=test_root
       - MONGO_INITDB_ROOT_PASSWORD=test_root_password
