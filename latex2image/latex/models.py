@@ -85,10 +85,37 @@ class LatexImage(models.Model):
         verbose_name = _("LaTeXImage")
         verbose_name_plural = _("LaTeXImages")
 
+    def _get_changed_fields(self):
+        # Get updated_fields: https://stackoverflow.com/a/55005137/3437454
+        # This method should only be used before saving.
+        if self.pk:
+            # If self.pk is not None then it's an update.
+            cls = self.__class__
+
+            # This will get the current model state since super().save()
+            # isn't called yet.
+            old = cls.objects.get(pk=self.pk)
+
+            # This gets the newly instantiated Mode object with the new values.
+            new = self
+            changed_fields = []
+            for field in cls._meta.get_fields():
+                field_name = field.name
+                try:
+                    if getattr(old, field_name) != getattr(new, field_name):
+                        changed_fields.append(field_name)
+                except Exception:
+                    # Catch field does not exist exception
+                    pass
+            return changed_fields
+        return []
+
     def save(self, **kwargs):
         # https://stackoverflow.com/a/18803218/3437454
 
-        if self.data_url and not self.image:
+        changed_fields = self._get_changed_fields()
+
+        if (self.data_url and not self.image) or "data_url" in changed_fields:
             self.image = make_image_file(self.data_url, self.tex_key)
 
         if self.image and not self.data_url:
