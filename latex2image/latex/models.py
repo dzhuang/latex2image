@@ -122,6 +122,7 @@ class LatexImage(models.Model):
             file = default_storage.open(str(self.image))
             self.data_url = get_data_url_from_buf_and_mimetype(
                 buf=file.read(), mime_type=guess_type(str(self.image))[0])
+            file.close()
 
         self.full_clean()
         return super().save(**kwargs)

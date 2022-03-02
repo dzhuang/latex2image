@@ -28,7 +28,9 @@ import os
 from random import randint
 from unittest import mock
 
+from django.db.models import signals
 from django.test import TestCase, override_settings
+from factory.django import mute_signals
 from rest_framework.test import (APIClient, APIRequestFactory,
                                  force_authenticate)
 from tests import factories
@@ -401,7 +403,8 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
         instance = LatexImage.objects.first()
         tex_key = instance.tex_key
 
-        instance.delete()
+        with mute_signals(signals.post_delete):
+            instance.delete()
 
         self.assertEqual(LatexImage.objects.all().count(), 0)
 
@@ -411,7 +414,7 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
 
             resp = self.api_client.post(
                 self.get_creat_url(), data=post_data, format='json')
-            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.status_code, 200, resp.content.decode())
             mock_convert.assert_not_called()
 
         self.assertEqual(LatexImage.objects.all().count(), 1)
