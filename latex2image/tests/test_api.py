@@ -469,9 +469,9 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
         ) as mock_convert:
             mock_convert.return_value = "foo:bar"
 
-            resp = self.api_client.post(
-                self.get_creat_url(), data=post_data, format='json')
-            self.assertEqual(resp.status_code, 200, resp.content.decode())
+            with self.assertRaises(ValueError):
+                self.api_client.post(
+                    self.get_creat_url(), data=post_data, format='json')
             mock_convert.assert_called_once()
 
     @suppress_stdout_decorator(suppress_stderr=True)
