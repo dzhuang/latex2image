@@ -176,16 +176,16 @@ class CreateMixin:
 
         if qs.count():
             instance = qs[0]
-        # else:
-        #     _path = "/".join(
-        #         [UPLOAD_TO, ".".join([_converter.tex_key, image_format])])
-        #     if default_storage.exists(_path):
-        #         instance = LatexImage(
-        #             tex_key=_converter.tex_key,
-        #             creator=self.request.user
-        #         )
-        #         instance.image.name = _path
-        #         instance.save()
+        else:
+            _path = "/".join(
+                [UPLOAD_TO, ".".join([_converter.tex_key, image_format])])
+            if default_storage.exists(_path):
+                instance = LatexImage(
+                    tex_key=_converter.tex_key,
+                    creator=self.request.user
+                )
+                instance.image.name = _path
+                instance.save()
 
         if instance:
             image_serializer = self.get_serializer(instance, fields=field_str)

@@ -64,7 +64,7 @@ jobs:
       - name: Run pytest
         working-directory: ./latex2image
         run: |
-          pytest --cov-report=xml --cov=.
+          pytest tests/test_api.py::LatexDetailAPITest::test_patch_success --cov-report=xml --cov=.
       - name: Test make and compile messages
         working-directory: ./latex2image
         env:
