@@ -392,6 +392,32 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(LatexImage.objects.all().count(), self.n_new + 1)
 
+    @override_settings(L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE=True)
+    def test_use_existing_storage_image_to_create_instance_success(self):
+        post_data = self.get_post_data()
+        self.api_client.post(self.get_creat_url(), data=post_data, format='json')
+        self.assertEqual(LatexImage.objects.all().count(), 1)
+
+        instance = LatexImage.objects.first()
+        tex_key = instance.tex_key
+
+        instance.delete()
+
+        self.assertEqual(LatexImage.objects.all().count(), 0)
+
+        with mock.patch(
+                "latex.converter.Tex2ImgBase.get_converted_data_url"
+        ) as mock_convert:
+
+            resp = self.api_client.post(
+                self.get_creat_url(), data=post_data, format='json')
+            self.assertEqual(resp.status_code, 200)
+            mock_convert.assert_not_called()
+
+        self.assertEqual(LatexImage.objects.all().count(), 1)
+        instance = LatexImage.objects.first()
+        self.assertEqual(instance.tex_key, tex_key)
+
     @suppress_stdout_decorator(suppress_stderr=True)
     def test_post_data_error_not_compile_error(self):
         post_data = self.get_post_data()
