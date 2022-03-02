@@ -121,6 +121,16 @@ jobs:
           push: false
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/latex2image-zhhans:latest
 
+      - name: Test new image
+        timeout-minutes: 3
+        run: |
+          docker-compose -f "docker-compose-example.yml" up -d
+          pip install requests pytest
+
+          sleep 15
+          py.test -vv latex2image/tests/image_test.py
+          docker-compose -f "docker-compose-example.yml" down
+
       - name: Push new base image
         if: steps.changed-files-specific.outputs.any_changed == 'true'
         run: |
