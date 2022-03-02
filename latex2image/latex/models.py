@@ -23,17 +23,20 @@ THE SOFTWARE.
 """
 
 import io
+from mimetypes import guess_type
 from urllib.parse import urljoin
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.files.storage import get_storage_class
+from django.core.files.storage import default_storage, get_storage_class
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.validators import validate_slug
 from django.db import models
 from django.utils.html import mark_safe
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
+
+from latex.utils import get_data_url_from_buf_and_mimetype
 
 UPLOAD_TO = "l2i_images"
 
@@ -84,8 +87,14 @@ class LatexImage(models.Model):
 
     def save(self, **kwargs):
         # https://stackoverflow.com/a/18803218/3437454
-        if self.data_url:
+
+        if self.data_url and not self.image:
             self.image = make_image_file(self.data_url, self.tex_key)
+
+        if self.image and not self.data_url:
+            file = default_storage.open(str(self.image))
+            self.data_url = get_data_url_from_buf_and_mimetype(
+                buf=file.read(), mime_type=guess_type(str(self.image))[0])
 
         self.full_clean()
         return super().save(**kwargs)

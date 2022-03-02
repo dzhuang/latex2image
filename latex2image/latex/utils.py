@@ -239,4 +239,11 @@ class StyledFormMixin:
         self.helper.field_class = "col-lg-8"
 
 
+def get_data_url_from_buf_and_mimetype(buf, mime_type):
+    from base64 import b64encode
+    return "data:%(mime_type)s;base64,%(b64)s" % {
+        "mime_type": mime_type,
+        "b64": b64encode(buf).decode(),
+    }
+
 # vim: foldmethod=marker

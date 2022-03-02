@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import annotations, division
 
 __copyright__ = "Copyright (C) 2020 Dong Zhuang"
 
@@ -26,13 +26,14 @@ import sys
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.core.files.storage import default_storage
 from rest_framework import generics, permissions, status
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
 from latex.converter import LatexCompileError, tex_to_img_converter
-from latex.models import LatexImage
+from latex.models import UPLOAD_TO, LatexImage
 from latex.serializers import LatexImageSerializer
 
 
@@ -171,10 +172,24 @@ class CreateMixin:
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         qs = LatexImage.objects.filter(tex_key=_converter.tex_key)
+
+        instance = None
+
         if qs.count():
             instance = qs[0]
-            image_serializer = self.get_serializer(
-                instance, fields=field_str)
+        else:
+            _path = "/".join(
+                [UPLOAD_TO, ".".join([_converter.tex_key, image_format])])
+            if default_storage.exists(_path):
+                instance = LatexImage(
+                    tex_key=_converter.tex_key,
+                    creator=self.request.user
+                )
+                instance.image.name = _path
+                instance.save()
+
+        if instance:
+            image_serializer = self.get_serializer(instance, fields=field_str)
             return Response(
                 image_serializer.data, status=status.HTTP_200_OK)
 
