@@ -196,7 +196,7 @@ class CreateMixin:
                         tex_key=_converter.tex_key,
                         creator=self.request.user
                     )
-                    instance.image.name = _path
+                    instance.image = _path
                     instance.save()
 
         if instance:
