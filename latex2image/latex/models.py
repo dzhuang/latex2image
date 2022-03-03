@@ -112,16 +112,15 @@ class LatexImage(models.Model):
 
     def save(self, **kwargs):
         # https://stackoverflow.com/a/18803218/3437454
-
         changed_fields = self._get_changed_fields()
 
         if (self.data_url and not self.image) or "data_url" in changed_fields:
             self.image = make_image_file(self.data_url, self.tex_key)
 
         if self.image and not self.data_url:
-            file = default_storage.open(str(self.image))
+            file = default_storage.open(self.image.name)
             self.data_url = get_data_url_from_buf_and_mimetype(
-                buf=file.read(), mime_type=guess_type(str(self.image))[0])
+                buf=file.read(), mime_type=guess_type(self.image.name)[0])
             file.close()
 
         self.full_clean()
