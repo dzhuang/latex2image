@@ -52,20 +52,19 @@ The following short-handed settings can be configured in your `docker-compose.ym
 | L2I_LANGUAGE_CODE                  | [Language code](https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-LANGUAGE_CODE) used for web server.              |
 | L2I_TZ                     | Timezone used.|
 | L2I_DEBUG                  | For settings.DEBUG. Allowed values [`off`, `on`], default to `off`. | 
-| L2I_API_IMAGE_RETURNS_RELATIVE_PATH | By default, when the return result of API request, the image field will return the relative path of the image file in the storage. If you want it to return the absolute url of the image, set it to `False`, which also need a proper configuration of the `MEDIA_URL` in your local_settings.|
+| L2I_API_IMAGE_RETURNS_RELATIVE_PATH | By default, when the return result of API request, the image field will return the relative path of the image file in the storage. If you want it to return the absolute url of the image, set it to `false`, which also need a proper configuration of the `MEDIA_URL` in your local_settings.|
 | L2I_CACHE_MAX_BYTES | The maximum size above which the attribute won't be cached. |
 | L2I_CACHE_DATA_URL_ON_SAVE | Whether cache the `data_url` attribute when a `LatexImage` object is saved. |
 | L2I_KEY_VERSION | A string which will be concatenated in the auto-generated `tex_key`, which is used as the identifier of the Tex source code. Default to 1. |
-| L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE | Default to False. If an / all instance(s) were deleted while the image(s) were not delete from the default storage, you can set the option to `True` to prevent re-compile / re-convert the image(s), and use the image(s) to recreate the instance when requested. This is important when we were serving images on cloud storages like s3 while the database were destroyed. In this way, we don't need to regenerate and upload the image(s).|
+| L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE | Default to `false`. If an / all instance(s) were deleted while the image(s) were not delete from the default storage, you can set the option to `true` to prevent re-compile / re-convert the image(s), and use the image(s) to recreate the instance when requested. This is important when we were serving images on cloud storages like s3 while the database were destroyed. In this way, we don't need to regenerate and upload the image(s).|
 | DJANGO_SUPERUSER_USERNAME | Superuser name created for the first run. String, no quote. |
 | DJANGO_SUPERUSER_PASSWORD | Superuser password created for the first run. String, no quote. |
 
 ### Advanced Configurations
 
 You can map the folder `latex2image/local_settings` to your local machine in the `volumes` block, and write a file named `local_settings.py` in it
-to override all setting items (including those set in the `docker-compose.yml` file). Another assumption which makes you need to use the `local_settings.py`
-configurations is, the docker service assume there is a running MongoDB service with 27017 port opened. You can override that by using SQLite3 backends,
-but make sure you have correct volume map of that sqlite3 file, or you data will get lost when the container stops.
+to override all setting items (including those set in the `docker-compose.yml` file, and noticing that the `true` / `false` in `docker-compose.yml` should be replaced with their Python counterpart). 
+Another assumption which makes you need to use the `local_settings.py` configurations is, the docker service assume there is a running MongoDB service with 27017 port opened. You can override that by using other database backendsSQLite3 backends.
 
 ### APIs available
 
