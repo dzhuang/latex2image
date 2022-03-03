@@ -15,6 +15,7 @@ on:
       - '!latex2image/tests/**'
       - 'Dockerfile.base'
       - 'Dockerfile'
+      - 'nginx.default'
   pull_request:
     paths:
       - '!**.png'
@@ -28,6 +29,7 @@ on:
       - '!latex2image/tests/**'
       - 'Dockerfile.base'
       - 'Dockerfile'
+      - 'nginx.default'
 
   workflow_run:
     workflows: ["Run Tests"]
