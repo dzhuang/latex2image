@@ -12,7 +12,7 @@ minimal disk space usage (no more than 1 GB).
 ![screenshot](https://raw.githubusercontent.com/dzhuang/latex2image/master/screenshot.png)
 
 ## Install and Usage
-Setup a MongoDB in you computer with default port (27017) opened, then run the following in your command line console:
+With docker-compose installed, run the following in your command line console:
     
     docker pull dzhuang/latex2image:latest
 
