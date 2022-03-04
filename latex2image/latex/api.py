@@ -23,10 +23,12 @@ THE SOFTWARE.
 """
 
 import sys
+from copy import deepcopy
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import default_storage
+from django.db import transaction
 from rest_framework import generics, permissions, status
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
@@ -34,7 +36,8 @@ from rest_framework.response import Response
 
 from latex.converter import LatexCompileError, tex_to_img_converter
 from latex.models import UPLOAD_TO, LatexImage
-from latex.serializers import LatexImageSerializer
+from latex.serializers import (LatexImageCreateDataSerialzier,
+                               LatexImageSerializer)
 
 
 class L2IRenderer(JSONRenderer):
@@ -119,17 +122,6 @@ def get_cached_attribute_by_tex_key(tex_key, attr, request):
     return result_dict
 
 
-def get_cached_results_from_field_and_tex_key(tex_key, field_str, request):
-    """
-    This currently deal with single field ('image' or 'data_url') cache
-    """
-    cached_result = None
-    fields = field_str.split(",")
-    if len(fields) == 1:
-        cached_result = get_cached_attribute_by_tex_key(tex_key, fields[0], request)
-    return cached_result
-
-
 class CreateMixin:
     def create(self, request, *args, **kwargs):
         use_existing_storage_image_to_create_instance = (
@@ -137,40 +129,44 @@ class CreateMixin:
                     "L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE",
                     False))
 
-        try:
-            req_params = JSONParser().parse(request)
-            compiler = req_params.pop("compiler")
-            tex_source = req_params.pop("tex_source")
-            image_format = req_params.pop("image_format")
-            tex_key = req_params.pop("tex_key", None)
-            field_str = req_params.pop("fields", None)
-            use_storage_file_if_exists = req_params.pop(
-                "use_storage_file_if_exists",
-                use_existing_storage_image_to_create_instance)
+        req_params = JSONParser().parse(request)
+        req_params_copy = deepcopy(req_params)
+        data_serializer = LatexImageCreateDataSerialzier(data=req_params)
 
-        except Exception:
+        try:
+            data_serializer.is_valid(raise_exception=True)
+        except Exception as e:
             from traceback import print_exc
             print_exc()
-            tp, e, __ = sys.exc_info()
-            error = "%s: %s" % (tp.__name__, str(e))
-            return Response(
-                {"error": error},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            raise e
 
-        if field_str and tex_key:
+        data = data_serializer.data
+
+        fields = data.get("fields")
+        tex_key = data.get("tex_key")
+
+        if fields and len(fields) == 1 and tex_key is not None:
             cached_result = (
-                get_cached_results_from_field_and_tex_key(
-                    tex_key, field_str, request))
+                get_cached_attribute_by_tex_key(tex_key, fields[0], request))
             if cached_result:
-                return Response(cached_result,
-                                status=status.HTTP_200_OK)
+                return Response(cached_result, status=status.HTTP_200_OK)
+            else:
+                req_params_copy.pop("fields")
+                req_params_copy.pop("tex_key")
+                _serializer = LatexImageCreateDataSerialzier(data=req_params_copy)
+                _serializer.is_valid(raise_exception=True)
+
+        image_format = data["image_format"]
+        fields = data.pop("fields", None)
+        use_storage_file_if_exists = data.pop(
+            "use_storage_file_if_exists",
+            use_existing_storage_image_to_create_instance)
 
         data_url = None
         error = None
 
         try:
-            _converter = tex_to_img_converter(
-                compiler, tex_source, image_format, tex_key, **req_params)
+            _converter = tex_to_img_converter(**data)
         except Exception:
             from traceback import print_exc
             print_exc()
@@ -192,15 +188,16 @@ class CreateMixin:
                 _path = "/".join(
                     [UPLOAD_TO, ".".join([_converter.tex_key, image_format])])
                 if default_storage.exists(_path):
-                    instance = LatexImage(
-                        tex_key=_converter.tex_key,
-                        creator=self.request.user
-                    )
-                    instance.image = _path
-                    instance.save()
+                    with transaction.atomic():
+                        instance = LatexImage(
+                            tex_key=_converter.tex_key,
+                            creator=self.request.user
+                        )
+                        instance.image = _path
+                        instance.save()
 
         if instance:
-            image_serializer = self.get_serializer(instance, fields=field_str)
+            image_serializer = self.get_serializer(instance, fields=fields)
             return Response(
                 image_serializer.data, status=status.HTTP_200_OK)
 
@@ -233,7 +230,7 @@ class CreateMixin:
         if image_serializer.is_valid():
             instance = image_serializer.save()
             return Response(
-                self.get_serializer(instance, fields=field_str).data,
+                self.get_serializer(instance, fields=fields).data,
                 status=status.HTTP_201_CREATED)
         return Response(
             # For example, tex_key already exists.
@@ -272,12 +269,12 @@ class LatexImageDetail(
     def get(self, request, *args, **kwargs):
         tex_key = kwargs.get("tex_key")
         assert tex_key is not None
-        fields_str = request.GET.getlist('fields')
-        if len(fields_str) == 1:
-            fields = fields_str[0].split(",")
+        fields = request.GET.getlist('fields')
+        if len(fields) == 1:
+            fields = fields[0].split(",")
             if len(fields) == 1:
                 cached_result = (
-                    get_cached_results_from_field_and_tex_key(
+                    get_cached_attribute_by_tex_key(
                         tex_key, fields[0], request))
                 return Response(
                     data=cached_result,

@@ -184,7 +184,7 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
             data=self.get_post_data(compiler="latex", image_format="jpg"),
             format="json"
         )
-        self.assertEqual(resp.status_code, 500)
+        self.assertEqual(resp.status_code, 400)
         self.assertEqual(LatexImage.objects.all().count(), 0)
 
     def test_compile_errored(self):
