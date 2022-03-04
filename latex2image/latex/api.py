@@ -22,14 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import sys
 from copy import deepcopy
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import default_storage
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 from rest_framework import generics, permissions, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -139,36 +140,40 @@ class CreateMixin:
         tex_key = data.get("tex_key")
 
         if fields and len(fields) == 1 and tex_key is not None:
+            # Try to get cached result
             cached_result = (
                 get_cached_attribute_by_tex_key(tex_key, fields[0], request))
             if cached_result:
                 return Response(cached_result, status=status.HTTP_200_OK)
             else:
+                # No cached result, re validate the request data
                 req_params_copy.pop("fields")
                 req_params_copy.pop("tex_key")
                 _serializer = LatexImageCreateDataSerialzier(data=req_params_copy)
-                _serializer.is_valid(raise_exception=True)
+                try:
+                    _serializer.is_valid(raise_exception=True)
+                except ValidationError as e:
+                    msg = _("No cache found, you need to supply required fields "
+                            "to regenerate the image. ")
+                    raise ValidationError(detail=f"{msg}{e.detail}")
+
+        data_url = None
+        error = None
 
         image_format = data["image_format"]
         fields = data.pop("fields", None)
         use_storage_file_if_exists = data.pop(
             "use_storage_file_if_exists",
-            getattr(settings, "L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE",
-                    False))
-
-        data_url = None
-        error = None
+            getattr(
+                settings, "L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE",
+                False))
 
         try:
             _converter = tex_to_img_converter(**data)
-        except Exception:
-            from traceback import print_exc
-            print_exc()
-            tp, e, __ = sys.exc_info()
-            error = "%s: %s" % (tp.__name__, str(e))
+        except Exception as e:
             return Response(
-                {"error": error},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                {"error": f"{type(e).__name__}: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST)
 
         qs = LatexImage.objects.filter(tex_key=_converter.tex_key)
         instance = None
@@ -198,16 +203,11 @@ class CreateMixin:
         try:
             data_url = _converter.get_converted_data_url()
         except Exception as e:
-            if isinstance(e, LatexCompileError):
-                error = "%s: %s" % (type(e).__name__, str(e))
-            else:
-                from traceback import print_exc
-                print_exc()
-                tp, e, __ = sys.exc_info()
-                error = "%s: %s" % (tp.__name__, str(e))
+            error = f"{type(e).__name__}: {str(e)}"
+            if not isinstance(e, LatexCompileError):
                 return Response(
                     {"error": error},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    status=status.HTTP_400_BAD_REQUEST)
 
         assert not all([data_url is None, error is None])
 
@@ -229,7 +229,7 @@ class CreateMixin:
         return Response(
             # For example, tex_key already exists.
             image_serializer.errors,
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            status=status.HTTP_400_BAD_REQUEST)
 
 
 class LatexImageCreate(

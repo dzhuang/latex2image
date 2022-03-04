@@ -131,7 +131,7 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
                     creator=creator.pk,
                     compile_error=compile_error,
                 ), format='json')
-            self.assertEqual(resp.status_code, 500)
+            self.assertEqual(resp.status_code, 400)
             resp_dict = json.loads(resp.content.decode())
             self.assertEqual(
                 resp_dict.get("tex_key", None),
@@ -212,7 +212,7 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
                 data=self.get_post_data(),
                 format="json"
             )
-        self.assertEqual(resp.status_code, 500)
+        self.assertEqual(resp.status_code, 400)
         self.assertEqual(LatexImage.objects.all().count(), 0)
 
         # errors are not saved to filesystem
@@ -505,6 +505,34 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
         self.assertEqual(
             sorted(filter_fields_str.split(",")),
             sorted(list(response_dict.keys())))
+
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
+    def test_fail_get_cached_data_while_request_data_is_ok(self):
+        resp = self.api_client.post(
+            self.get_list_url(),
+            data=self.get_post_data(fields="image", tex_key="foobar"),
+            format='json')
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(LatexImage.objects.all().count(), 1)
+
+    def test_fail_get_cached_data_while_request_data_is_not_valid(self):
+        resp = self.api_client.post(
+            self.get_list_url(),
+            data=dict(fields="image", tex_key="foobar"),
+            format='json')
+        self.assertContains(resp, "These fields are required", status_code=400)
+        self.assertEqual(LatexImage.objects.all().count(), 0)
+
+    def test_tex_to_img_converter_errored(self):
+        with mock.patch("latex.api.tex_to_img_converter") as mock_convertor_init:
+            mock_convertor_init.side_effect = RuntimeError()
+
+            resp = self.api_client.post(
+                self.get_list_url(),
+                data=self.get_post_data(),
+                format='json')
+
+            self.assertEqual(resp.status_code, 400)
 
 
 class CacheTestBase(APITestBaseMixin):

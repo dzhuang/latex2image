@@ -1,7 +1,8 @@
 import os
-from unittest import TestCase, mock
+from unittest import TestCase, mock, skipIf
 
 from tests.base_test_mixins import get_latex_file_dir
+from tests.utils import SKIP_ON_WINDOWS_REASON, skip_on_windows
 
 from latex.converter import (ImageConvertError, LatexCompileError,
                              UnknownCompileError, get_tex2img_class,
@@ -14,6 +15,7 @@ def get_file_content(file_path):
 
 
 class TexToImgConverterTest(TestCase):
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_xelatex_png(self):
         xelatex_doc_path = get_latex_file_dir("xelatex")
         for filename in os.listdir(xelatex_doc_path):
@@ -26,6 +28,7 @@ class TexToImgConverterTest(TestCase):
                 self.assertIsNotNone(data_url)
                 self.assertTrue(data_url.startswith("data:image/png"))
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_lualatex_png(self):
         lualatex_doc_path = get_latex_file_dir("lualatex")
         for filename in os.listdir(lualatex_doc_path):
@@ -38,6 +41,7 @@ class TexToImgConverterTest(TestCase):
                 self.assertIsNotNone(data_url)
                 self.assertTrue(data_url.startswith("data:image/png"))
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_pdfsvg(self):
         pdf2svg_doc_path = get_latex_file_dir("pdf2svg")
         for filename in os.listdir(pdf2svg_doc_path):
@@ -50,6 +54,7 @@ class TexToImgConverterTest(TestCase):
                 self.assertIsNotNone(data_url)
                 self.assertTrue(data_url.startswith("data:image/svg"))
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_pdflatex(self):
         pdflatex_doc_path = get_latex_file_dir("pdflatex")
         for image_format in ["png", "svg"]:
@@ -66,6 +71,7 @@ class TexToImgConverterTest(TestCase):
                     self.assertTrue(data_url.startswith(
                         "data:image/%s" % image_format))
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_latex_png(self):
         latex_doc_path = get_latex_file_dir("latex2png")
         for image_format in ["png", "svg"]:
@@ -82,6 +88,7 @@ class TexToImgConverterTest(TestCase):
                     self.assertTrue(
                         data_url.startswith("data:image/%s" % image_format))
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_latex_png_tizk_got_svg(self):
         latex_doc_path = get_latex_file_dir("latex2png")
         for image_format in ["png"]:
@@ -174,6 +181,7 @@ class TexToImgConverterTest(TestCase):
                 ).get_converted_data_url()
             self.assertIn(expected_error, str(cm.exception))
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_imagemagick_convert_error(self):
         doc_path = get_latex_file_dir("xelatex")
         filename = os.listdir(doc_path)[0]
@@ -189,6 +197,7 @@ class TexToImgConverterTest(TestCase):
                 ).get_converted_data_url()
             self.assertIn(expected_error, str(cm.exception))
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_do_convert_success_but_no_images(self):
         doc_path = get_latex_file_dir("xelatex")
         filename = os.listdir(doc_path)[0]
@@ -209,6 +218,10 @@ class GetTex2imgClassTest(TestCase):
     def test_compiler_not_allowed(self):
         with self.assertRaises(ValueError):
             get_tex2img_class("pdftex", "png")
+
+    def test_image_format_not_allowed(self):
+        with self.assertRaises(ValueError):
+            get_tex2img_class("pdflatex", "jpg")
 
     def test_not_allowed_compiler_format_combination(self):
         with mock.patch(

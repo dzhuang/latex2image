@@ -2,12 +2,11 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from latex.constants import (ALLOWED_COMPILER,
-                             ALLOWED_COMPILER_FORMAT_COMBINATION,
-                             ALLOWED_LATEX2IMG_FORMAT)
+from latex.constants import ALLOWED_COMPILER, ALLOWED_LATEX2IMG_FORMAT
 from latex.models import LatexImage
 
-LATEX_IMAGE_ALLOWED_FIELDS_NAME = [f.name for f in LatexImage._meta.get_fields()]
+LATEX_IMAGE_ALLOWED_FIELDS_NAME = [
+    f.name for f in LatexImage._meta.get_fields() if f.name != "id"]
 
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):
@@ -63,9 +62,7 @@ class LatexImageSerializer(DynamicFieldsModelSerializer):
 
 class _FieldsSerializer(serializers.ListField):
     def to_internal_value(self, data):
-        if data is None:
-            return super().to_internal_value(data)
-        elif isinstance(data, str):
+        if isinstance(data, str):
             data = data.split(",")
 
             unknown = []
@@ -76,23 +73,27 @@ class _FieldsSerializer(serializers.ListField):
             if unknown:
                 raise serializers.ValidationError(
                     _("Unknown field name: {unknown}, allowed are {allowed}").format(
-                        unknown=unknown,
-                        allowed=",".join(LATEX_IMAGE_ALLOWED_FIELDS_NAME)
+                        unknown=",".join([f"\"{f}\"" for f in unknown]),
+                        allowed=",".join([
+                            f"\"{f}\"" for f in LATEX_IMAGE_ALLOWED_FIELDS_NAME])
                     )
                 )
         else:
-            raise serializers.ValidationError("This field should be a string")
+            raise serializers.ValidationError(_("This field should be a string."))
         return super().to_internal_value(data)
 
 
 class LatexImageCreateDataSerialzier(serializers.Serializer):
+    """
+    Serializer for (request/form) data when create new LatexImage
+    """
     compiler = serializers.ChoiceField(
-        required=False, allow_null=True, choices=ALLOWED_COMPILER)
+        required=False, allow_null=False, choices=ALLOWED_COMPILER)
     image_format = serializers.ChoiceField(
-        required=False, allow_null=True, choices=ALLOWED_LATEX2IMG_FORMAT)
+        required=False, allow_null=False, choices=ALLOWED_LATEX2IMG_FORMAT)
     tex_source = serializers.CharField(max_length=None, required=False)
     tex_key = serializers.CharField(max_length=None, required=False)
-    fields = _FieldsSerializer(required=False, allow_null=True)
+    fields = _FieldsSerializer(required=False, allow_null=False)
     use_storage_file_if_exists = serializers.BooleanField(required=False)
 
     def validate(self, attrs):
@@ -119,22 +120,8 @@ class LatexImageCreateDataSerialzier(serializers.Serializer):
                     )
                 raise serializers.ValidationError(
                     _("These fields are required {missing_fields}.").format(
-                        missing_fields=", ".join(missing_fields)
-                    )
-                )
-
-        compiler = attrs.get("compiler")
-        image_format = attrs.get("image_format")
-        if compiler is not None and image_format is not None:
-            if (compiler, image_format) not in ALLOWED_COMPILER_FORMAT_COMBINATION:
-                raise serializers.ValidationError(
-                    _('Combination ("{compiler}", "{image_format}") not supported, '
-                      'allowed combinations are {allowed}').format(
-                        compiler=compiler,
-                        image_format=image_format,
-                        allowed=", ".join(
-                            [str(comb) for comb
-                             in ALLOWED_COMPILER_FORMAT_COMBINATION])
+                        missing_fields=", ".join(
+                            [f"\"{f}\"" for f in missing_fields])
                     )
                 )
 
