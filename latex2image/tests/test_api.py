@@ -26,7 +26,7 @@ THE SOFTWARE.
 import json
 import os
 from random import randint
-from unittest import mock
+from unittest import mock, skipIf
 
 from django.db.models import signals
 from django.test import TestCase, override_settings
@@ -38,6 +38,7 @@ from tests.base_test_mixins import (L2ITestMixinBase, get_fake_data_url,
                                     get_latex_file_dir,
                                     improperly_configured_cache_patch,
                                     suppress_stdout_decorator)
+from tests.utils import SKIP_ON_WINDOWS_REASON, skip_on_windows
 
 from latex.api import LatexImageList
 from latex.converter import get_data_url
@@ -95,6 +96,7 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
         self.assertEqual(len(json.loads(resp.content.decode())), self.n_new)
         self.assertEqual(resp.status_code, 200)
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_create_success(self):
         self.create_n_instances()
         resp = self.api_client.post(
@@ -102,9 +104,10 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(LatexImage.objects.all().count(), self.n_new + 1)
 
-    def test_create_already_exist_just_before_saving_success(self):
-        instance = factories.LatexImageErrorFactory(tex_key="key_already_exists")
-        tex_key = instance.tex_key
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
+    def test_object_created_just_before_saving(self):
+        tex_key = "key_already_exists"
+        instance = factories.LatexImageErrorFactory(tex_key=tex_key)
         creator = instance.creator
         creation_time = instance.creation_time
         compile_error = instance.compile_error
@@ -167,18 +170,17 @@ class LatexListAPITest(APITestBaseMixin, TestCase):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(LatexImage.objects.all().count(), 1)
 
-    @suppress_stdout_decorator(suppress_stderr=True)
-    def test_post_data_error_not_compile_error(self):
+    def test_post_data_validation_error(self):
         post_data = self.get_post_data()
         del post_data["tex_source"]
+        del post_data["image_format"]
 
         resp = self.api_client.post(
             self.get_list_url(), data=post_data, format='json')
-        self.assertContains(resp, "KeyError", status_code=500)
+        self.assertContains(resp, "required", status_code=400)
         self.assertEqual(LatexImage.objects.all().count(), 0)
 
-    @suppress_stdout_decorator(suppress_stderr=True)
-    def test_converter_init_errored(self):
+    def test_post_data_combination_not_supported(self):
         resp = self.api_client.post(
             self.get_list_url(),
             data=self.get_post_data(compiler="latex", image_format="jpg"),
@@ -294,6 +296,7 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
         self.assertEqual(
             sorted(filter_fields), sorted(list(response_dict.keys())))
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_put_success(self):
         first_instance = self.create_n_instances(n=1)[0]
         first_instance_size = first_instance.image.size
@@ -328,15 +331,14 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
         self.assertNotEqual(
             LatexImage.objects.first().image.size, first_instance_size)
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_patch_success(self):
         first_instance = self.create_n_instances(n=1)[0]
         first_instance_size = first_instance.image.size
         first_instance_path = first_instance.image.path
 
-        self.api_client.post(
-            self.get_list_url(),
-            data=self.get_post_data(),
-            format='json')
+        self.api_client.post(self.get_list_url(), data=self.get_post_data(),
+                             format='json')
 
         second_instance = LatexImage.objects.last()
         second_data_url = second_instance.data_url
@@ -362,6 +364,7 @@ class LatexDetailAPITest(APITestBaseMixin, TestCase):
 
 
 class LatexCreateAPITest(APITestBaseMixin, TestCase):
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_create_success_svg(self):
         resp = self.api_client.post(
             self.get_list_url(),
@@ -384,6 +387,7 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(LatexImage.objects.all().count(), self.n_new)
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_create_success(self):
         self.create_n_instances()
 
@@ -394,6 +398,7 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(LatexImage.objects.all().count(), self.n_new + 1)
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     @override_settings(L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE=True)
     def test_use_existing_storage_image_to_create_instance_success(self):
         post_data = self.get_post_data()
@@ -421,6 +426,7 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
         instance = LatexImage.objects.first()
         self.assertEqual(instance.tex_key, tex_key)
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     @override_settings(L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE=False)
     def test_use_existing_storage_image_to_create_instance_post_data(self):
         # settings not enabled L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE
@@ -451,6 +457,7 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
         instance = LatexImage.objects.first()
         self.assertEqual(instance.tex_key, tex_key)
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     @override_settings(L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE=False)
     def test_not_use_existing_storage_image_to_create_instance(self):
         post_data = self.get_post_data()
@@ -474,16 +481,17 @@ class LatexCreateAPITest(APITestBaseMixin, TestCase):
                     self.get_creat_url(), data=post_data, format='json')
             mock_convert.assert_called_once()
 
-    @suppress_stdout_decorator(suppress_stderr=True)
-    def test_post_data_error_not_compile_error(self):
+    def test_post_data_validation_error(self):
         post_data = self.get_post_data()
         del post_data["tex_source"]
 
         resp = self.api_client.post(
             self.get_creat_url(), data=post_data, format='json')
-        self.assertContains(resp, "KeyError", status_code=500)
+
+        self.assertContains(resp, "required", status_code=400)
         self.assertEqual(LatexImage.objects.all().count(), 0)
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_create_success_filter_fields(self):
         filter_fields_str = "data_url,creation_time"
 
@@ -751,6 +759,7 @@ class DetailViewCacheTest(CacheTestBase, TestCase):
 
 
 class CreateViewCacheTest(CacheTestBase, TestCase):
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_post_create_data_url_not_cached_get_cached(self):
         filter_fields_str = "data_url"
         cache_key = self.get_field_cache_key(filter_fields_str)
@@ -770,6 +779,7 @@ class CreateViewCacheTest(CacheTestBase, TestCase):
             sorted(filter_fields_str.split(",")),
             sorted(list(response_dict.keys())))
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     @override_settings(L2I_API_IMAGE_RETURNS_RELATIVE_PATH=True)
     def test_post_create_image_not_cached_get_cached_image_return_relative_path(self):  # noqa
         filter_fields_str = "image"
@@ -790,6 +800,7 @@ class CreateViewCacheTest(CacheTestBase, TestCase):
         self.assertTrue(
             self.test_cache.get(cache_key).startswith(IMAGE_PATH_PREFIX))
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     @override_settings(L2I_API_IMAGE_RETURNS_RELATIVE_PATH=False)
     def test_post_create_image_not_cached_get_cached_image_return_url(self):
         filter_fields_str = "image"
@@ -808,6 +819,7 @@ class CreateViewCacheTest(CacheTestBase, TestCase):
         self.assertTrue(
             self.test_cache.get(cache_key).startswith("http"))
 
+    @skipIf(skip_on_windows, SKIP_ON_WINDOWS_REASON)
     def test_post_create_field_obj_exist_cache_improperly_configured(self):
         filter_fields_str = "image"
 

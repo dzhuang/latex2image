@@ -106,9 +106,13 @@ class LatexImageCreateDataSerialzier(serializers.Serializer):
                     missing_fields.append(field)
 
             if missing_fields:
+                if len(missing_fields) == 1:
+                    raise serializers.ValidationError(
+                        {missing_fields[0]: _("This field is required.")}
+                    )
                 raise serializers.ValidationError(
-                    _("These fields are required {missing_fields}").format(
-                        missing_fields=missing_fields
+                    _("These fields are required {missing_fields}.").format(
+                        missing_fields=", ".join(missing_fields)
                     )
                 )
 
