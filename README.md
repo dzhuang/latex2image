@@ -128,13 +128,12 @@ Contributions to the project are welcome.
     # Do your development...
     
     # Install test dependancies
-    pip install factory_boy
-    pip install coverage
-    coverage run manage.py test tests && coverage html
+    pip install -r tests/requirements_test.txt
+    coverage run -m pytest . && coverage html
 
 
 ## Customized build
-If you want to add other fonts to the image, you need to provide a downloadable url of a `tar.gz` file, and set it in Travis-CI options with name `MY_EXTRA_FONTS_GZ`. 
+If you want to add other fonts to the image, you need to provide a downloadable url of a `tar.gz` file, and set it in your action secret with name `EXTRA_FONTS`. 
 
 ### ALERT 
 To include fonts in your own builds, You must respect the intellectual property rights (LICENSE) of those fonts, and take the correspond legal responsibility.
