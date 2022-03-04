@@ -26,9 +26,13 @@ class DynamicFieldsModelSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
 
         if fields is not None:
+
+            if isinstance(fields, str):
+                fields = fields.split(",")
+
             # Drop any fields that are not specified in the `fields` argument
             # but we will always include "compile_error"
-            allowed = set(fields.split(",") + ["compile_error"])
+            allowed = set(fields + ["compile_error"])
             existing = set(self.fields)
             for field_name in existing - allowed:
                 self.fields.pop(field_name)
@@ -57,6 +61,30 @@ class LatexImageSerializer(DynamicFieldsModelSerializer):
         return representation
 
 
+class _FieldsSerializer(serializers.ListField):
+    def to_internal_value(self, data):
+        if data is None:
+            return super().to_internal_value(data)
+        elif isinstance(data, str):
+            data = data.split(",")
+
+            unknown = []
+            for d in data:
+                if d not in LATEX_IMAGE_ALLOWED_FIELDS_NAME:
+                    unknown.append(d)
+
+            if unknown:
+                raise serializers.ValidationError(
+                    _("Unknown field name: {unknown}, allowed are {allowed}").format(
+                        unknown=unknown,
+                        allowed=",".join(LATEX_IMAGE_ALLOWED_FIELDS_NAME)
+                    )
+                )
+        else:
+            raise serializers.ValidationError("This field should be a string")
+        return super().to_internal_value(data)
+
+
 class LatexImageCreateDataSerialzier(serializers.Serializer):
     compiler = serializers.ChoiceField(
         required=False, allow_null=True, choices=ALLOWED_COMPILER)
@@ -64,29 +92,8 @@ class LatexImageCreateDataSerialzier(serializers.Serializer):
         required=False, allow_null=True, choices=ALLOWED_LATEX2IMG_FORMAT)
     tex_source = serializers.CharField(max_length=None, required=False)
     tex_key = serializers.CharField(max_length=None, required=False)
-    fields = serializers.CharField(max_length=None, required=False)
-    use_storage_file_if_exists = serializers.BooleanField(
-        required=False,
-        default=getattr(
-            settings, "L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE", False))
-
-    def validate_fields(self, fields_data):
-        if fields_data is None:
-            return []
-        fields = [f.strip() for f in fields_data.split(",")]
-        unknown = []
-        for f in fields:
-            if f not in LATEX_IMAGE_ALLOWED_FIELDS_NAME:
-                unknown.append(f)
-
-        if unknown:
-            raise serializers.ValidationError(
-                _("Unknown field name: {unknown}, allowed are {allowed}").format(
-                    unknown=unknown,
-                    allowed=LATEX_IMAGE_ALLOWED_FIELDS_NAME
-                )
-            )
-        return fields
+    fields = _FieldsSerializer(required=False, allow_null=True)
+    use_storage_file_if_exists = serializers.BooleanField(required=False)
 
     def validate(self, attrs):
 

@@ -85,8 +85,6 @@ def get_cached_attribute_by_tex_key(tex_key, attr, request):
         if cached_compile_error is not None:
             return {"compile_error": cached_compile_error}
 
-    # print("Getting value from db")
-
     # Check db if it exists
     objs = LatexImage.objects.filter(tex_key=tex_key)
     if not objs.count():
@@ -124,11 +122,6 @@ def get_cached_attribute_by_tex_key(tex_key, attr, request):
 
 class CreateMixin:
     def create(self, request, *args, **kwargs):
-        use_existing_storage_image_to_create_instance = (
-            getattr(settings,
-                    "L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE",
-                    False))
-
         req_params = JSONParser().parse(request)
         req_params_copy = deepcopy(req_params)
         data_serializer = LatexImageCreateDataSerialzier(data=req_params)
@@ -160,7 +153,8 @@ class CreateMixin:
         fields = data.pop("fields", None)
         use_storage_file_if_exists = data.pop(
             "use_storage_file_if_exists",
-            use_existing_storage_image_to_create_instance)
+            getattr(settings, "L2I_USE_EXISTING_STORAGE_IMAGE_TO_CREATE_INSTANCE",
+                    False))
 
         data_url = None
         error = None
