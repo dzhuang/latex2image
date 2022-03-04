@@ -36,6 +36,9 @@ from django.utils.encoding import DEFAULT_LOCALE_ENCODING
 from django.utils.translation import gettext as _
 from wand.image import Image as wand_image
 
+from latex.constants import (ALLOWED_COMPILER,
+                             ALLOWED_COMPILER_FORMAT_COMBINATION,
+                             ALLOWED_LATEX2IMG_FORMAT)
 from latex.utils import (CriticalCheckMessage, file_read, file_write,
                          get_abstract_latex_log,
                          get_data_url_from_buf_and_mimetype, popen_wrapper,
@@ -649,19 +652,6 @@ class Xelatex2Svg(Tex2ImgBase):
 
 
 # {{{ get tex2img class
-
-ALLOWED_COMPILER = ['latex', 'pdflatex', 'xelatex', 'lualatex']
-ALLOWED_LATEX2IMG_FORMAT = ['png', 'svg']
-ALLOWED_COMPILER_FORMAT_COMBINATION = (
-    ("latex", "png"),
-    ("latex", "svg"),
-    ("lualatex", "png"),
-    ("lualatex", "svg"),
-    ("pdflatex", "png"),
-    ("pdflatex", "svg"),
-    ("xelatex", "png"),
-    ("xelatex", "svg"),
-)
 
 
 def get_tex2img_class(compiler, image_format):

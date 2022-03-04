@@ -32,8 +32,8 @@ from django.shortcuts import render
 from django.utils.translation import gettext as _
 from rest_framework import status
 
-from latex.converter import (ALLOWED_COMPILER_FORMAT_COMBINATION,
-                             LatexCompileError, tex_to_img_converter)
+from latex.constants import ALLOWED_COMPILER_FORMAT_COMBINATION
+from latex.converter import LatexCompileError, tex_to_img_converter
 from latex.models import LatexImage
 from latex.utils import StyledFormMixin, get_codemirror_widget
 
