@@ -1,4 +1,6 @@
-FROM python:3.9-slim-buster
+ARG base=python:3.9-slim-buster
+
+FROM ${base}
 MAINTAINER Dong Zhuang <dzhuang.scut@gmail.com>
 
 ARG USERNAME=l2i_user
