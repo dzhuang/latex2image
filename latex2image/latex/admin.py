@@ -17,7 +17,7 @@ class HasCompileErrorFilter(SimpleListFilter):
     parameter_name = 'has_compile_error'
 
     def lookups(self, request, model_admin):
-        return(
+        return (
             ('y', _('Yes')),
             ('n', _('No')))
 
