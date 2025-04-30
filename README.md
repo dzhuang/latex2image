@@ -24,7 +24,7 @@ With docker-compose installed, run the following in your command line console:
 
     docker-compose up -d
 
-In your browser, navigate to http://127.0.0.1:8020/, and login with the superuser name you configured in the 
+In your browser, navigate to http://127.0.0.1:8040/, and login with the superuser name you configured in the 
 `docker-compose.yml` (see below).
 
 #### Notice:
